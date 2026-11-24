@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { login, requireAdmin } from '../auth.js';
 import { DEFAULT_ADMIN_PASSWORD, usesDefaultPassword } from '../security.js';
+import { resetCustomerPassword } from '../customerAuth.js';
 import { CATEGORIES, db, getSettings, updateSettings } from '../db.js';
 import { availabilityGrid, freeTechnicians } from '../availability.js';
 import { getBooking, listBookings, STATUSES, updateBooking } from '../bookings.js';
@@ -311,6 +312,38 @@ r.post('/messages/:id/resend', async (req, res) => {
 r.post('/messages/:id/mark-sent', (req, res) => {
   db.prepare("UPDATE whatsapp_messages SET status = 'sent', error = NULL WHERE id = ?").run(Number(req.params.id));
   ok(res, { ok: true });
+});
+
+// ---------- Customers (website accounts) ----------
+r.get('/customers', (req, res) => {
+  const q = String(req.query.q || '').trim();
+  const like = `%${q}%`;
+  const rows = db.prepare(`
+    SELECT c.*, (SELECT COUNT(*) FROM bookings b WHERE b.customer_id = c.id
+                 OR (c.phone_verified = 1 AND c.phone IS NOT NULL AND b.phone = c.phone)) AS booking_count
+    FROM customers c
+    ${q ? 'WHERE c.name LIKE ? OR c.phone LIKE ? OR c.email LIKE ?' : ''}
+    ORDER BY c.id DESC LIMIT 300`).all(...(q ? [like, like, like] : []));
+  ok(res, rows.map((c) => ({
+    id: c.id, name: c.name, phone: c.phone, email: c.email,
+    phoneVerified: !!c.phone_verified, hasPassword: !!c.password_hash, hasGoogle: !!c.google_sub,
+    bookingCount: c.booking_count, createdAt: c.created_at, lastLoginAt: c.last_login_at,
+  })));
+});
+
+/** Forgot password: create a temporary password and a ready-to-send WhatsApp message. */
+r.post('/customers/:id/reset-password', (req, res) => {
+  const { tempPassword, customer } = resetCustomerPassword(Number(req.params.id));
+  const s = getSettings();
+  const text = `Hi ${customer.name || ''}, your ${s.business_name} login password has been reset.
+
+` +
+    `Mobile: +${customer.phone}
+Temporary password: ${tempPassword}
+
+` +
+    'Please log in and change it from My Orders > Change password.';
+  ok(res, { tempPassword, waLink: waLink(customer.phone, text) });
 });
 
 r.get('/meta', (_req, res) => ok(res, { categories: CATEGORIES, statuses: STATUSES, messageKinds: KIND_LABELS, whatsappProvider }));

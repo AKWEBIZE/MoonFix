@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { CATEGORIES, db, getSettings } from '../db.js';
 import { slotsForDate, upcomingDates } from '../availability.js';
 import { createBooking, getBookingByRef, updateBooking } from '../bookings.js';
-import { otpMode } from '../customerAuth.js';
+import { customerIdFromRequest, otpMode } from '../customerAuth.js';
 import { config, HttpError, isDateStr, normalizePhone, ok } from '../util.js';
 import { limitByIp } from '../security.js';
 
@@ -58,7 +58,7 @@ r.get('/slots', (req, res) => {
 });
 
 r.post('/bookings', honeypot, bookingHourly, bookingDaily, async (req, res) => {
-  const b = await createBooking(req.body || {});
+  const b = await createBooking(req.body || {}, { customerId: customerIdFromRequest(req) });
   ok(res, publicView(b), 201);
 });
 

@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { API_BASE } from './app-settings';
 import {
+  AdminCustomer,
   AvailabilityGrid,
   BlockedDate,
   Booking,
@@ -143,6 +144,17 @@ export class AdminApiService {
   }
   saveSettings(s: Partial<Settings>) {
     return this.http.put<Settings>(`${this.base}/settings`, s);
+  }
+
+  // Customers (website accounts)
+  customers(q = '') {
+    return this.http.get<AdminCustomer[]>(`${this.base}/customers`, { params: q ? { q } : {} });
+  }
+  resetCustomerPassword(id: number) {
+    return this.http.post<{ tempPassword: string; waLink: string }>(
+      `${this.base}/customers/${id}/reset-password`,
+      {},
+    );
   }
 
   // WhatsApp log

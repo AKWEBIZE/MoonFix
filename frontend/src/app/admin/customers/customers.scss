@@ -1,0 +1,41 @@
+// Table, filters and buttons come from src/styles/_admin.scss
+
+.table tbody tr {
+  cursor: default;
+}
+
+// ---------- Temporary password after a reset ----------
+.reset-card {
+  margin-bottom: 16px;
+  border-color: var(--theme-primary-200);
+  background: var(--theme-primary-50);
+}
+.reset-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--theme-primary-dark);
+}
+.reset-head b {
+  flex: 1;
+  color: var(--theme-text);
+}
+.temp-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 14px 0 10px;
+}
+.temp {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 8px 14px;
+  background: var(--theme-white);
+  border: 1.5px dashed var(--theme-primary-300);
+  border-radius: 10px;
+}
+.reset-card p {
+  margin: 0;
+}

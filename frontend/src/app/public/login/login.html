@@ -1,6 +1,6 @@
 <section class="page-banner">
   <div class="container narrow">
-    <h1>Login</h1>
+    <h1>{{ mode() === 'login' ? 'Login' : 'Create your account' }}</h1>
     <p>See all your bookings, track visits and book again faster.</p>
   </div>
 </section>
@@ -12,11 +12,134 @@
         <span class="login-mark"><app-icon name="user" [size]="22" /></span>
         <div>
           <h2>Welcome to {{ site.businessName() }}</h2>
-          <p class="muted">Log in with Google or your WhatsApp number.</p>
+          <p class="muted">Use your mobile number and a password.</p>
         </div>
       </div>
 
+      <!-- Log in / Create account -->
+      <div class="mode-tabs" role="tablist">
+        <button role="tab" type="button" [class.on]="mode() === 'login'" (click)="setMode('login')">
+          Log in
+        </button>
+        <button
+          role="tab"
+          type="button"
+          [class.on]="mode() === 'register'"
+          (click)="setMode('register')"
+        >
+          Create account
+        </button>
+      </div>
+
+      <form class="pw-form" (ngSubmit)="submit()" autocomplete="on">
+        @if (mode() === 'register') {
+          <label class="field">
+            <span>Your name</span>
+            <input
+              name="name"
+              [(ngModel)]="form.name"
+              autocomplete="name"
+              maxlength="100"
+              placeholder="e.g. Priya Sharma"
+              required
+            />
+          </label>
+        }
+
+        <label class="field">
+          <span>Mobile number</span>
+          <div class="phone-input">
+            <span class="cc">+91</span>
+            <input
+              name="phone"
+              type="tel"
+              inputmode="tel"
+              autocomplete="tel-national"
+              [(ngModel)]="form.phone"
+              placeholder="98765 43210"
+              maxlength="15"
+              required
+            />
+          </div>
+        </label>
+
+        <label class="field">
+          <span>{{ mode() === 'register' ? 'Create a password' : 'Password' }}</span>
+          <div class="pw-input">
+            <input
+              name="password"
+              [type]="showPassword() ? 'text' : 'password'"
+              [attr.autocomplete]="mode() === 'register' ? 'new-password' : 'current-password'"
+              [(ngModel)]="form.password"
+              maxlength="100"
+              required
+            />
+            <button
+              type="button"
+              class="show-btn"
+              (click)="showPassword.set(!showPassword())"
+              [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+            >
+              {{ showPassword() ? 'Hide' : 'Show' }}
+            </button>
+          </div>
+          @if (mode() === 'register') {
+            <small class="hint" [class.ok]="strongEnough(form.password)">
+              At least 8 characters, with letters and numbers
+            </small>
+          }
+        </label>
+
+        @if (mode() === 'register') {
+          <label class="field">
+            <span>Confirm password</span>
+            <input
+              name="confirm"
+              [type]="showPassword() ? 'text' : 'password'"
+              autocomplete="new-password"
+              [(ngModel)]="form.confirm"
+              maxlength="100"
+              required
+            />
+            @if (form.confirm && form.confirm !== form.password) {
+              <small class="error">Passwords do not match</small>
+            }
+          </label>
+        }
+
+        @if (error()) {
+          <p class="error">{{ error() }}</p>
+        }
+
+        <button class="btn btn-primary btn-block" [disabled]="!canSubmit() || busy()">
+          @if (busy()) {
+            Please wait…
+          } @else if (mode() === 'login') {
+            <app-icon name="user" [size]="18" /> Log in
+          } @else {
+            <app-icon name="check" [size]="18" /> Create account
+          }
+        </button>
+
+        @if (mode() === 'login') {
+          <p class="fine">
+            Forgot your password?
+            <a [href]="forgotLink()" target="_blank" rel="noopener">WhatsApp us</a> and we'll reset
+            it.
+          </p>
+        } @else {
+          <p class="fine">
+            Bookings you make while logged in are saved to your account. Without an account you can
+            still <a routerLink="/track">track a booking</a> with its ID.
+          </p>
+        }
+      </form>
+
+      <!-- Other ways to log in (shown when they are set up) -->
       @if (site.config(); as cfg) {
+        @if (cfg.googleClientId || cfg.otpMode !== 'off') {
+          <div class="or"><span>or</span></div>
+        }
         @if (cfg.googleClientId) {
           <div class="google-box" [class.busy]="googleBusy()">
             <app-google-button [clientId]="cfg.googleClientId" (credential)="onGoogle($event)" />
@@ -28,34 +151,17 @@
             }
           </div>
         }
-
         @if (cfg.otpMode !== 'off') {
-          @if (cfg.googleClientId) {
-            <div class="or"><span>or use WhatsApp</span></div>
-          }
           <app-wa-otp purpose="login" (verified)="done($event)" />
         }
-
-        @if (!cfg.googleClientId && cfg.otpMode === 'off') {
-          <div class="notice warn">
-            Online login is not available yet. You can still
-            <a routerLink="/track">track a booking</a> with your Booking ID.
-          </div>
-        }
-      } @else {
-        <p class="muted center">Loading…</p>
       }
-
-      <p class="fine">
-        New here? Logging in creates your account. Your bookings are matched by your mobile number.
-      </p>
     </div>
 
     <ul class="perks">
       <li><app-icon name="list" [size]="18" /> All your bookings in one place</li>
       <li><app-icon name="clock" [size]="18" /> Live status of upcoming visits</li>
       <li><app-icon name="calendar" [size]="18" /> Book again in a few taps</li>
-      <li><app-icon name="shield" [size]="18" /> No password to remember</li>
+      <li><app-icon name="shield" [size]="18" /> Your password is stored securely</li>
     </ul>
   </div>
 </section>

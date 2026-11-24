@@ -22,6 +22,24 @@ export interface Customer {
   picture: string;
   hasGoogle: boolean;
   needsPhone: boolean;
+  /** Can log in with mobile number + password */
+  hasPassword: boolean;
+  /** Number proven with a WhatsApp code (then all bookings for the number are shown) */
+  phoneVerified: boolean;
+}
+
+/** Website customer account, as shown in the admin panel. */
+export interface AdminCustomer {
+  id: number;
+  name: string;
+  phone: string | null;
+  email: string;
+  phoneVerified: boolean;
+  hasPassword: boolean;
+  hasGoogle: boolean;
+  bookingCount: number;
+  createdAt: string;
+  lastLoginAt: string | null;
 }
 
 export interface CustomerSession {

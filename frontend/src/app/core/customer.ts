@@ -67,6 +67,21 @@ export class CustomerAuthService {
     const url = purpose === 'login' ? `${this.base}/otp/verify` : `${this.base}/phone/verify`;
     return this.http.post<CustomerSession>(url, { requestId, code }).pipe(tap((s) => this.set(s)));
   }
+  register(name: string, phone: string, password: string) {
+    return this.http
+      .post<CustomerSession>(`${this.base}/register`, { name, phone, password })
+      .pipe(tap((s) => this.set(s)));
+  }
+  login(phone: string, password: string) {
+    return this.http
+      .post<CustomerSession>(`${this.base}/login`, { phone, password })
+      .pipe(tap((s) => this.set(s)));
+  }
+  changePassword(currentPassword: string, newPassword: string) {
+    return this.http
+      .post<Customer>(`${this.base}/password`, { currentPassword, newPassword })
+      .pipe(tap((c) => this.updateCustomer(c)));
+  }
   google(credential: string) {
     return this.http
       .post<CustomerSession>(`${this.base}/google`, { credential })
@@ -88,14 +103,20 @@ export class CustomerAuthService {
   }
 }
 
-/** Adds the customer token to /api/customer calls; logs out when it has expired. */
+/**
+ * Adds the customer token to /api/customer calls (logs out when it has expired), and to new
+ * bookings so a booking made while logged in is saved to the customer's account.
+ */
 export const customerInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(CustomerAuthService);
   const router = inject(Router);
   const isCustomer = req.url.includes('/api/customer/');
+  const isBooking = req.method === 'POST' && req.url.endsWith('/api/public/bookings');
   const token = auth.token;
   const r =
-    isCustomer && token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
+    (isCustomer || isBooking) && token
+      ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+      : req;
   return next(r).pipe(
     catchError((e: HttpErrorResponse) => {
       if (isCustomer && token && e.status === 401) {

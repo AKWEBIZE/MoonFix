@@ -180,6 +180,82 @@
             }
           </div>
         }
+
+        @if (!c.phoneVerified) {
+          <p class="muted small account-note">
+            <app-icon name="shield" [size]="14" /> Showing bookings made while logged in to this
+            account. Booked earlier without logging in? <a routerLink="/track">Track it</a> with its
+            Booking ID.
+          </p>
+        }
+
+        <!-- Password -->
+        <div class="card mt pw-card">
+          <div class="pw-head">
+            <div>
+              <h3>{{ c.hasPassword ? 'Password' : 'Set a password' }}</h3>
+              <p class="muted small">
+                Log in with your mobile number
+                {{ c.phone ? '(' + (c.phone | phone) + ')' : '' }} and this password.
+              </p>
+            </div>
+            @if (!pwOpen()) {
+              <button class="btn btn-outline btn-sm" (click)="pwOpen.set(true)">
+                <app-icon name="edit" [size]="14" />
+                {{ c.hasPassword ? 'Change password' : 'Set password' }}
+              </button>
+            }
+          </div>
+          @if (pwOpen()) {
+            <form class="pw-form" (ngSubmit)="savePassword()">
+              @if (c.hasPassword) {
+                <label class="field">
+                  <span>Current password</span>
+                  <input
+                    name="current"
+                    type="password"
+                    autocomplete="current-password"
+                    [(ngModel)]="pw.current"
+                  />
+                </label>
+              }
+              <label class="field">
+                <span>New password</span>
+                <input
+                  name="next"
+                  type="password"
+                  autocomplete="new-password"
+                  [(ngModel)]="pw.next"
+                  maxlength="100"
+                />
+                <small class="muted" [class.ok]="strongEnough(pw.next)"
+                  >At least 8 characters, with letters and numbers</small
+                >
+              </label>
+              <label class="field">
+                <span>Confirm new password</span>
+                <input
+                  name="confirm"
+                  type="password"
+                  autocomplete="new-password"
+                  [(ngModel)]="pw.confirm"
+                  maxlength="100"
+                />
+                @if (pw.confirm && pw.confirm !== pw.next) {
+                  <small class="error">Passwords do not match</small>
+                }
+              </label>
+              <div class="pw-actions">
+                <button type="button" class="btn btn-ghost btn-sm" (click)="closePw()">
+                  Cancel
+                </button>
+                <button class="btn btn-primary btn-sm" [disabled]="!canSavePw() || pwSaving()">
+                  {{ pwSaving() ? 'Saving…' : 'Save password' }}
+                </button>
+              </div>
+            </form>
+          }
+        </div>
       }
     }
   </div>

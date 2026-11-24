@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
-  customerDto, linkPhone, loginWithGoogle, loginWithPhone, otpStatus, requireCustomer, startOtp, updateName, verifyOtp,
+  changeCustomerPassword, customerDto, linkPhone, loginWithGoogle, loginWithPassword, loginWithPhone, otpStatus,
+  registerWithPassword, requireCustomer, startOtp, updateName, verifyOtp,
 } from '../customerAuth.js';
 import { getBookingByRef, listBookings, updateBooking } from '../bookings.js';
 import { HttpError, ok } from '../util.js';
@@ -26,10 +27,24 @@ r.post('/google', async (req, res) => {
   ok(res, await loginWithGoogle(req.body?.credential));
 });
 
+// Mobile number + password
+r.post('/register', (req, res) => {
+  const { name, phone, password } = req.body || {};
+  ok(res, registerWithPassword({ name, phone, password, ip: req.ip }), 201);
+});
+
+r.post('/login', (req, res) => {
+  ok(res, loginWithPassword({ phone: req.body?.phone, password: req.body?.password, ip: req.ip }));
+});
+
 // ---------- Signed-in customer ----------
 r.use(requireCustomer);
 
 r.get('/me', (req, res) => ok(res, customerDto(req.customer)));
+
+r.post('/password', (req, res) => {
+  ok(res, changeCustomerPassword(req.customer.id, req.body?.currentPassword, req.body?.newPassword));
+});
 
 r.patch('/me', (req, res) => {
   const name = String(req.body?.name || '').trim();
@@ -57,15 +72,25 @@ const orderDto = (b) => ({
   brand: b.brand, issue: b.issue, createdAt: b.createdAt,
 });
 
-/** All bookings made with the customer's verified mobile number, newest first. */
+/**
+ * The customer's bookings, newest first.
+ * - Number proven with a WhatsApp code: every booking made with that number, plus ones made while logged in.
+ * - Number only typed in at sign-up: just the bookings made while logged in to this account.
+ */
+const ownsBooking = (c, b) => b.customerId === c.id || (!!c.phone_verified && !!c.phone && b.phone === c.phone);
+
 r.get('/bookings', (req, res) => {
-  if (!req.customer.phone) throw new HttpError(403, 'Please verify your mobile number to see your bookings.');
-  ok(res, listBookings({ phone: req.customer.phone, limit: 500 }).map(orderDto));
+  const c = req.customer;
+  if (!c.phone && !c.password_hash) throw new HttpError(403, 'Please verify your mobile number to see your bookings.');
+  const list = c.phone_verified
+    ? listBookings({ owner: { customerId: c.id, phone: c.phone }, limit: 500 })
+    : listBookings({ owner: { customerId: c.id }, limit: 500 });
+  ok(res, list.map(orderDto));
 });
 
 r.post('/bookings/:ref/cancel', async (req, res) => {
   const b = getBookingByRef(req.params.ref);
-  if (!b || !req.customer.phone || b.phone !== req.customer.phone) throw new HttpError(404, 'Booking not found');
+  if (!b || !ownsBooking(req.customer, b)) throw new HttpError(404, 'Booking not found');
   if (!['pending', 'confirmed'].includes(b.status)) {
     throw new HttpError(400, 'This booking can no longer be cancelled online. Please contact us on WhatsApp.');
   }

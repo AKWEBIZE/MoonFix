@@ -55,6 +55,7 @@ export function toDto(b) {
     technicianName: b.technician_name,
     technicianPhone: b.technician_phone,
     status: b.status,
+    customerId: b.customer_id ?? null,
     adminNotes: b.admin_notes,
     whatsappOptin: !!b.whatsapp_optin,
     reminderSentAt: b.reminder_sent_at,
@@ -75,10 +76,15 @@ export function getBookingByRef(ref) {
   return toDto(db.prepare(`${BASE_SELECT} WHERE b.ref = ?`).get(String(ref).toUpperCase()));
 }
 
-export function listBookings({ date, from, to, status, q, technicianId, phone, limit = 200 } = {}) {
+export function listBookings({ date, from, to, status, q, technicianId, phone, owner, limit = 200 } = {}) {
   const where = [];
   const params = [];
   if (phone) { where.push('b.phone = ?'); params.push(phone); }
+  // owner: bookings made by this customer account, and (if given) any booking with this proven phone number
+  if (owner) {
+    if (owner.phone) { where.push('(b.customer_id = ? OR b.phone = ?)'); params.push(owner.customerId, owner.phone); }
+    else { where.push('b.customer_id = ?'); params.push(owner.customerId); }
+  }
   if (date) { where.push('b.date = ?'); params.push(date); }
   if (from) { where.push('b.date >= ?'); params.push(from); }
   if (to) { where.push('b.date <= ?'); params.push(to); }
@@ -95,7 +101,7 @@ export function listBookings({ date, from, to, status, q, technicianId, phone, l
 }
 
 /** Customer booking: validates, auto-assigns the least busy free technician, sends WhatsApp. */
-export async function createBooking(input) {
+export async function createBooking(input, { customerId = null } = {}) {
   const customerName = str(input.customerName, 100);
   const address = str(input.address, 500);
   const phone = normalizePhone(input.phone);
@@ -129,12 +135,13 @@ export async function createBooking(input) {
 
     const info = db.prepare(`
       INSERT INTO bookings (ref, customer_name, phone, address, landmark, pincode, service_id, brand, issue,
-                            date, slot_id, technician_id, status, whatsapp_optin, reminder_sent_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+                            date, slot_id, technician_id, status, whatsapp_optin, reminder_sent_at, customer_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       ref, customerName, phone, address, str(input.landmark, 200), str(input.pincode, 10), serviceId,
       str(input.brand, 60), str(input.issue, 1000), date, slotId, tech?.id ?? null,
       tech ? 'confirmed' : 'pending', input.whatsappOptin === false ? 0 : 1,
       skipReminder ? new Date().toISOString() : null,
+      customerId,
     );
     return Number(info.lastInsertRowid);
   });

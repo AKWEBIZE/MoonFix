@@ -23,6 +23,7 @@ export class AdminLayout implements OnInit, OnDestroy {
     { path: 'dashboard', label: 'Dashboard', icon: 'grid' },
     { path: 'bookings', label: 'Bookings', icon: 'list' },
     { path: 'availability', label: 'Availability', icon: 'calendar' },
+    { path: 'customers', label: 'Customers', icon: 'user' },
     { path: 'technicians', label: 'Technicians', icon: 'users' },
     { path: 'slots', label: 'Time slots & days', icon: 'clock' },
     { path: 'services', label: 'Services & prices', icon: 'tool' },

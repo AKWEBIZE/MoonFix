@@ -18,7 +18,7 @@ import crypto from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import { db, getSettings, tx } from './db.js';
 import { sendMessage, waLink, whatsappProvider } from './whatsapp.js';
-import { config, HttpError, isValidPhone, normalizePhone } from './util.js';
+import { config, hashPassword, HttpError, isValidPhone, normalizePhone, verifyPassword } from './util.js';
 import { rateLimit } from './security.js';
 
 const REQUEST_TTL_MS = 10 * 60_000; // time to send the WhatsApp message
@@ -164,6 +164,7 @@ export function customerDto(c) {
   return {
     id: c.id, name: c.name, email: c.email, phone: c.phone, picture: c.picture,
     hasGoogle: !!c.google_sub, needsPhone: !c.phone,
+    hasPassword: !!c.password_hash, phoneVerified: !!c.phone_verified,
   };
 }
 
@@ -187,8 +188,12 @@ export function session(customer) {
 export function loginWithPhone(phone) {
   let c = db.prepare('SELECT * FROM customers WHERE phone = ?').get(phone);
   if (!c) {
-    const info = db.prepare('INSERT INTO customers (phone, name) VALUES (?, ?)').run(phone, lastBookingName(phone));
+    const info = db.prepare('INSERT INTO customers (phone, name, phone_verified) VALUES (?, ?, 1)').run(phone, lastBookingName(phone));
     c = getCustomer(Number(info.lastInsertRowid));
+  } else if (!c.phone_verified) {
+    // The code proves who owns this number. A password on this account was set by someone who
+    // only typed the number in, so remove it; the owner can set their own from My Orders.
+    db.prepare('UPDATE customers SET phone_verified = 1, password_hash = NULL WHERE id = ?').run(c.id);
   }
   return session(touch(c.id));
 }
@@ -224,16 +229,98 @@ export function linkPhone(customerId, phone) {
     }
     const merged = tx(() => {
       db.prepare('DELETE FROM customers WHERE id = ?').run(me.id);
-      db.prepare(`UPDATE customers SET google_sub = ?, email = ?, picture = ?,
+      db.prepare(`UPDATE customers SET google_sub = ?, email = ?, picture = ?, phone_verified = 1,
+                  password_hash = CASE WHEN phone_verified = 1 THEN password_hash ELSE NULL END,
                   name = CASE WHEN name = '' THEN ? ELSE name END WHERE id = ?`)
         .run(me.google_sub, me.email, me.picture, me.name, owner.id);
       return owner.id;
     });
     return session(touch(merged));
   }
-  db.prepare("UPDATE customers SET phone = ?, name = CASE WHEN name = '' THEN ? ELSE name END WHERE id = ?")
+  db.prepare("UPDATE customers SET phone = ?, phone_verified = 1, name = CASE WHEN name = '' THEN ? ELSE name END WHERE id = ?")
     .run(phone, lastBookingName(phone), me.id);
   return session(touch(me.id));
+}
+
+// ---------- Mobile number + password ----------
+/** Customer passwords: 8+ characters with at least one letter and one number. */
+export function checkCustomerPassword(password) {
+  const p = String(password || '');
+  if (p.length < 8 || p.length > 100 || !/[A-Za-z]/.test(p) || !/[0-9]/.test(p)) {
+    throw new HttpError(400, 'Password must be at least 8 characters and include letters and numbers.');
+  }
+  return p;
+}
+
+/**
+ * Sign up with mobile number + password.
+ * The number is NOT proven (no code is sent), so the account only shows bookings made
+ * while logged in to it - never other people's bookings that happen to use this number.
+ */
+export function registerWithPassword({ name: rawName, phone: rawPhone, password, ip }) {
+  limit(`register-ip:${ip}`, 10, 60 * 60_000, 'Too many sign-ups from this device. Please try again later.');
+  const name = String(rawName || '').trim().slice(0, 100);
+  if (name.length < 2) throw new HttpError(400, 'Please enter your name');
+  if (!isValidPhone(rawPhone)) throw new HttpError(400, 'Please enter a valid mobile number');
+  const phone = normalizePhone(rawPhone);
+  const pass = checkCustomerPassword(password);
+
+  if (db.prepare('SELECT 1 FROM customers WHERE phone = ?').get(phone)) {
+    throw new HttpError(409, 'This mobile number already has an account. Please log in, or WhatsApp us if you forgot the password.');
+  }
+  const info = db.prepare('INSERT INTO customers (phone, name, password_hash, phone_verified) VALUES (?, ?, ?, 0)')
+    .run(phone, name, hashPassword(pass));
+  return session(touch(Number(info.lastInsertRowid)));
+}
+
+/** Log in with mobile number + password. */
+export function loginWithPassword({ phone: rawPhone, password, ip }) {
+  const phone = isValidPhone(rawPhone) ? normalizePhone(rawPhone) : '';
+  limit(`pw-ip:${ip}`, 30, 15 * 60_000, 'Too many login attempts. Please try again in a few minutes.');
+  if (phone) limit(`pw-phone:${phone}`, 8, 15 * 60_000, 'Too many attempts for this number. Please try again in 15 minutes.');
+  const c = phone ? db.prepare('SELECT * FROM customers WHERE phone = ?').get(phone) : null;
+  if (!c || !c.password_hash || !verifyPassword(String(password || ''), c.password_hash)) {
+    throw new HttpError(401, 'Wrong mobile number or password.');
+  }
+  return session(touch(c.id));
+}
+
+/** Change (or, for WhatsApp/Google accounts, set) the password of the signed-in customer. */
+export function changeCustomerPassword(customerId, currentPassword, newPassword) {
+  const c = getCustomer(customerId);
+  if (!c) throw new HttpError(401, 'Please log in again');
+  if (!c.phone) throw new HttpError(400, 'Please confirm your mobile number first.');
+  if (c.password_hash && !verifyPassword(String(currentPassword || ''), c.password_hash)) {
+    throw new HttpError(400, 'Your current password is wrong.');
+  }
+  const pass = checkCustomerPassword(newPassword);
+  db.prepare('UPDATE customers SET password_hash = ? WHERE id = ?').run(hashPassword(pass), c.id);
+  return customerDto(getCustomer(c.id));
+}
+
+/** Admin: give a customer a temporary password (they asked for help on WhatsApp). */
+export function resetCustomerPassword(customerId) {
+  const c = getCustomer(customerId);
+  if (!c) throw new HttpError(404, 'Customer not found');
+  if (!c.phone) throw new HttpError(400, 'This customer has no mobile number yet.');
+  const alphabet = 'abcdefghjkmnpqrstuvwxyz';
+  const letters = [...crypto.randomBytes(5)].map((b) => alphabet[b % alphabet.length]).join('');
+  const temp = `${letters}${crypto.randomInt(1000, 10000)}`; // e.g. "kfmrw4821": easy to type, 8+ chars
+  db.prepare('UPDATE customers SET password_hash = ? WHERE id = ?').run(hashPassword(temp), c.id);
+  return { tempPassword: temp, customer: customerDto(getCustomer(c.id)) };
+}
+
+/** For optional sign-in (e.g. booking): the customer id from a valid token, otherwise null. */
+export function customerIdFromRequest(req) {
+  const header = req.headers.authorization || '';
+  if (!header.startsWith('Bearer ')) return null;
+  try {
+    const payload = jwt.verify(header.slice(7), config.jwtSecret, { algorithms: ['HS256'] });
+    if (payload.role !== 'customer') return null;
+    return getCustomer(payload.sub)?.id ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export function updateName(customerId, name) {

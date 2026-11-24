@@ -198,3 +198,40 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+// ---------- Password ----------
+.account-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 18px 0 0;
+}
+.pw-card .pw-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.pw-card h3 {
+  margin: 0 0 2px;
+  font-size: 1.05rem;
+}
+.pw-card .pw-head p {
+  margin: 0;
+}
+.pw-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+  max-width: 420px;
+}
+.pw-form small.ok {
+  color: var(--theme-success);
+}
+.pw-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}

@@ -67,6 +67,11 @@ export const routes: Routes = [
         title: 'Availability',
       },
       {
+        path: 'customers',
+        loadComponent: () => import('./admin/customers/customers').then((m) => m.CustomersPage),
+        title: 'Customers',
+      },
+      {
         path: 'technicians',
         loadComponent: () =>
           import('./admin/technicians/technicians').then((m) => m.TechniciansPage),

@@ -42,6 +42,11 @@ export class AccountPage {
   editingName = signal(false);
   nameDraft = '';
 
+  // Password
+  pwOpen = signal(false);
+  pwSaving = signal(false);
+  pw = { current: '', next: '', confirm: '' };
+
   private today = localToday();
   upcoming = computed(() =>
     this.orders()
@@ -108,6 +113,40 @@ export class AccountPage {
       },
       error: (e) => this.toast.error(errMsg(e)),
     });
+  }
+
+  strongEnough(p: string) {
+    return p.length >= 8 && /[A-Za-z]/.test(p) && /[0-9]/.test(p);
+  }
+
+  canSavePw() {
+    const needsCurrent = !!this.me()?.hasPassword;
+    return (
+      (!needsCurrent || this.pw.current.length > 0) &&
+      this.strongEnough(this.pw.next) &&
+      this.pw.next === this.pw.confirm
+    );
+  }
+
+  savePassword() {
+    if (!this.canSavePw()) return;
+    this.pwSaving.set(true);
+    this.auth.changePassword(this.pw.current, this.pw.next).subscribe({
+      next: () => {
+        this.pwSaving.set(false);
+        this.closePw();
+        this.toast.ok('Password saved');
+      },
+      error: (e) => {
+        this.pwSaving.set(false);
+        this.toast.error(errMsg(e));
+      },
+    });
+  }
+
+  closePw() {
+    this.pwOpen.set(false);
+    this.pw = { current: '', next: '', confirm: '' };
   }
 
   canCancel = (o: CustomerOrder) => o.status === 'pending' || o.status === 'confirmed';

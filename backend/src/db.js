@@ -138,6 +138,23 @@ CREATE TABLE IF NOT EXISTS login_requests (
 CREATE INDEX IF NOT EXISTS idx_login_requests_phone ON login_requests(phone, status);
 `);
 
+// ---------- Migrations for databases created by older versions ----------
+const hasColumn = (table, column) =>
+  !!db.prepare(`SELECT 1 FROM pragma_table_info('${table}') WHERE name = ?`).get(column);
+
+// Mobile + password login
+if (!hasColumn('customers', 'password_hash')) db.exec('ALTER TABLE customers ADD COLUMN password_hash TEXT');
+if (!hasColumn('customers', 'phone_verified')) {
+  // 1 = the number was proven with a WhatsApp code; 0 = typed in at sign-up (not proven)
+  db.exec('ALTER TABLE customers ADD COLUMN phone_verified INTEGER NOT NULL DEFAULT 0');
+  db.exec('UPDATE customers SET phone_verified = 1 WHERE phone IS NOT NULL'); // earlier accounts all used WhatsApp codes
+}
+// Which customer account made a booking (NULL for guest bookings)
+if (!hasColumn('bookings', 'customer_id')) {
+  db.exec('ALTER TABLE bookings ADD COLUMN customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL');
+}
+db.exec('CREATE INDEX IF NOT EXISTS idx_bookings_customer ON bookings(customer_id)');
+
 // ---------- Settings ----------
 const DEFAULT_SETTINGS = {
   business_name: config.businessName,
