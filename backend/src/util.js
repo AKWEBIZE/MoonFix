@@ -42,6 +42,8 @@ export const config = {
     name: (process.env.DB_NAME || '').trim(),
     user: (process.env.DB_USER || '').trim(),
     password: process.env.DB_PASSWORD || '',
+    // Optional: MySQL socket file. When DB_HOST=localhost and this is empty, common locations are tried.
+    socket: (process.env.DB_SOCKET || '').trim(),
   },
   jwtSecret: process.env.JWT_SECRET || 'dev-only-secret-change-me',
   adminUsername: process.env.ADMIN_USERNAME || 'admin',

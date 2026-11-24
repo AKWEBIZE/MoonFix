@@ -41,9 +41,7 @@ let engine; // { api, tx(fn), hasColumn(table, col), close() }
 
 if (dialect === 'mysql') {
   const mysql = await import('mysql2/promise');
-  const pool = mysql.createPool({
-    host: config.db.host,
-    port: config.db.port,
+  const baseOptions = {
     user: config.db.user,
     password: config.db.password,
     database: config.db.name,
@@ -52,21 +50,62 @@ if (dialect === 'mysql') {
     waitForConnections: true,
     decimalNumbers: true, // SUM()/AVG() as numbers, not strings
     supportBigNumbers: true,
-  });
+  };
+
+  // Ways to reach MySQL, tried in order. On shared hosting (e.g. Hostinger) database users are often
+  // allowed only from 'localhost', which MySQL grants to socket connections, not TCP to 127.0.0.1 -
+  // so with DB_HOST=localhost the local socket file is tried first, like PHP does.
+  const SOCKET_PATHS = ['/var/lib/mysql/mysql.sock', '/var/run/mysqld/mysqld.sock', '/run/mysqld/mysqld.sock',
+    '/tmp/mysql.sock', '/var/run/mysql/mysql.sock', '/var/lib/mysql/mysqld.sock'];
+  const isSocket = (p) => { try { return fs.statSync(p).isSocket(); } catch { return false; } };
+  const targets = [];
+  if (config.db.socket) targets.push({ via: 'socket', socketPath: config.db.socket });
+  else if (config.db.host.toLowerCase() === 'localhost') {
+    const found = SOCKET_PATHS.find(isSocket);
+    if (found) targets.push({ via: 'socket', socketPath: found });
+  }
+  targets.push({ via: 'tcp', host: config.db.host, port: config.db.port });
+
+  // Fail with a clear, safe summary if no way works
+  let pool = null;
+  const attempts = [];
+  for (const { via, ...where } of targets) {
+    const candidate = mysql.createPool({ ...baseOptions, ...where, connectTimeout: 10_000 });
+    try {
+      await candidate.query('SELECT 1');
+      pool = candidate;
+      console.log(`[db] MySQL via ${via}${where.socketPath ? ` (${where.socketPath})` : ''}`);
+      break;
+    } catch (e) {
+      await candidate.end().catch(() => {});
+      // "Access denied for user 'x'@'127.0.0.1'": keep only the host part MySQL saw
+      const seenAs = /'[^']*'@'([^']*)'/.exec(e.message || '')?.[1];
+      attempts.push({ via, code: e.code || 'ERROR', ...(seenAs ? { mysqlSawYouAs: seenAs } : {}), error: e });
+      console.error(`[db] MySQL via ${via} failed: ${e.message}`);
+    }
+  }
+  if (!pool) {
+    const last = attempts[attempts.length - 1].error;
+    const pw = config.db.password;
+    console.error(`[db] Cannot connect to MySQL at ${config.db.host}:${config.db.port} (database "${config.db.name}", user "${config.db.user}")`);
+    // Safe hints only - never the password, user name or host name
+    throw Object.assign(last, {
+      details: {
+        attempts: attempts.map(({ error, ...a }) => a),
+        userHasHostingerPrefix: /^u\d+_/.test(config.db.user),
+        databaseHasHostingerPrefix: /^u\d+_/.test(config.db.name),
+        passwordLength: pw.length,
+        passwordHasSpacesAtEnds: pw !== pw.trim(),
+        socketsFound: SOCKET_PATHS.filter(isSocket).length,
+      },
+    });
+  }
   const runOn = (conn) => async (sql, params) => {
     const [result] = await conn.query(sql, params);
     return Array.isArray(result)
       ? { rows: result, info: null }
       : { rows: [], info: { lastInsertRowid: result.insertId, changes: result.affectedRows } };
   };
-  // Fail fast with a clear message if the MySQL settings are wrong
-  try {
-    await pool.query('SELECT 1');
-  } catch (e) {
-    console.error(`[db] Cannot connect to MySQL at ${config.db.host}:${config.db.port} (database "${config.db.name}", user "${config.db.user}"): ${e.message}`);
-    await pool.end().catch(() => {});
-    throw e; // server.js shows the error code on the website
-  }
   console.log(`[db] MySQL: ${config.db.user}@${config.db.host}:${config.db.port}/${config.db.name}`);
   engine = {
     api: makeApi(runOn(pool)),

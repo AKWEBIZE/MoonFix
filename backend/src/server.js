@@ -56,6 +56,8 @@ import('./app.js').then(
       code,
       hint: HINTS[code] || 'See the server log for details.',
       ...(code === 'UNSAFE_SETTINGS' && Array.isArray(e.details) ? { settingsToFix: e.details } : {}),
+      // Safe MySQL checks from db.js (never the password, user name or host name)
+      ...(code !== 'UNSAFE_SETTINGS' && e.details && typeof e.details === 'object' ? { checks: e.details } : {}),
       fix: 'Correct the setting in the hosting panel, then restart or redeploy the app.',
     };
     handler = (_req, res) => sendStatus(res, body);
