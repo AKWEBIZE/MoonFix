@@ -41,13 +41,27 @@ app.use('/api/admin', (_req, res, next) => {
 
 app.use('/api', (_req, _res, next) => next(new HttpError(404, 'Not found')));
 
-// Optional: serve the built Angular app from the same server in production
+// Serve the built Angular website from the same server (run `npm run build` in the repo root first).
+// WEB_DIR can point somewhere else if your host puts the build in another folder.
 const here = path.dirname(fileURLToPath(import.meta.url));
-const webDir = path.resolve(here, '../../frontend/dist/frontend/browser');
-if (fs.existsSync(webDir)) {
-  app.use(express.static(webDir, { index: false, maxAge: '1h' }));
-  app.get(/^(?!\/api).*/, (_req, res) => res.sendFile(path.join(webDir, 'index.html')));
+const webDir = path.resolve(process.env.WEB_DIR || path.join(here, '../../frontend/dist/frontend/browser'));
+if (fs.existsSync(path.join(webDir, 'index.html'))) {
+  // Hashed JS/CSS files can be cached for a long time; index.html must always be fresh after a deploy
+  app.use(express.static(webDir, {
+    index: false,
+    maxAge: '30d',
+    setHeaders: (res, file) => { if (file.endsWith('.html')) res.set('Cache-Control', 'no-cache'); },
+  }));
+  app.get(/^(?!\/api).*/, (_req, res) => {
+    res.set('Cache-Control', 'no-cache');
+    res.sendFile(path.join(webDir, 'index.html'));
+  });
   console.log(`[web] Serving Angular build from ${webDir}`);
+} else {
+  console.warn(`[web] Website build not found at ${webDir} - run "npm run build" in the project root.`);
+  app.get(/^(?!\/api).*/, (_req, res) =>
+    res.status(503).type('text').send('The website files have not been built yet. Run "npm run build" in the project root, then restart.'),
+  );
 }
 
 // eslint-disable-next-line no-unused-vars

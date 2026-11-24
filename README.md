@@ -158,10 +158,20 @@ npm start
 
 ## Production
 
+From the project root (this is also what hosts like Hostinger run):
+
 ```powershell
-cd frontend; npm run build
-cd ../backend; npm start
+npm install
+npm run build   # installs the backend, then installs and builds the Angular frontend
+npm start       # starts the backend, which serves the website and the API
 ```
+
+On Hostinger (Node.js app from Git):
+- Root directory: the repo root
+- Build command: `npm run build`
+- Start command: `npm start`
+- Node.js version: 22 or newer
+- Put the settings from `backend/.env.example` into the panel's environment variables.
 
 When `frontend/dist/frontend/browser` exists, the Node server serves the website and the API together on one port
 (`PORT`, default 4000). Put it behind Nginx/IIS with HTTPS, set `CORS_ORIGINS`, a long random `JWT_SECRET`, and back up
