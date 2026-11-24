@@ -19,9 +19,9 @@ const HINTS = {
   UNSAFE_SETTINGS: 'Live-mode safety check failed. Fix the settings listed below.',
 };
 
-try {
-  await import('./app.js');
-} catch (e) {
+// No top-level await in this file: Hostinger (LiteSpeed) loads the entry file with require(),
+// which cannot load a module that uses top-level await. import() below has no such limit.
+import('./app.js').catch((e) => {
   const code = String(e?.code || 'STARTUP_FAILED').replace(/[^A-Z0-9_]/gi, '').slice(0, 40);
   console.error('[startup] The app could not start:', e);
   const body = JSON.stringify({
@@ -34,5 +34,5 @@ try {
   http.createServer((_req, res) => {
     res.writeHead(503, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' });
     res.end(body);
-  }).listen(Number(process.env.PORT) || 4000, () => console.error(`[startup] Fallback server is showing the error code ${code}`));
-}
+  }).listen(process.env.PORT || 4000, () => console.error(`[startup] Fallback server is showing the error code ${code}`));
+});
