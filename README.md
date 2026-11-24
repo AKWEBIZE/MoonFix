@@ -4,7 +4,7 @@ A booking website where customers schedule a technician at their doorstep, with 
 for technician availability, time slots and **WhatsApp follow-ups**.
 
 - **Frontend:** Angular 22 (standalone components, signals) — `frontend/`
-- **Backend:** Node.js + Express 5 + SQLite (built into Node, nothing to install) — `backend/`
+- **Backend:** Node.js + Express 5 + MySQL on the live server, SQLite (built into Node) for local development — `backend/`
 
 ---
 
@@ -173,9 +173,13 @@ On Hostinger (Node.js app from Git, branch `Prod`):
 - Build command: none
 - Entry file: `src/server.js`
 - Node.js version: 22 or newer
-- Put the settings from `backend/.env.example` into the panel's environment variables, plus
-  `DB_FILE=/home/<your-user>/moonfix-data/app.db`. Every deploy goes into a fresh folder, so the database must live
-  outside it.
+- Put the settings from `backend/.env.example` into the panel's environment variables.
+- Database (MySQL, recommended): in hPanel → **Databases → MySQL Databases**, create a database and user, then
+  set `DB_HOST` (usually `localhost`), `DB_PORT=3306`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` in the environment
+  variables. Tables, the admin account and sample data are created on the first start. The logs show
+  `[db] MySQL: user@host:port/name`. Data survives every redeploy.
+- Without `DB_HOST` the app uses SQLite. With `NODE_ENV=production` the file is kept in `~/moonfix-data/app.db`
+  (outside the app folder, because every deploy goes into a fresh folder). Set `DB_FILE` for another location.
 
 On a VPS you can instead run `npm install`, `npm run build` and `npm start` from the project root.
 
@@ -220,7 +224,7 @@ The Node server serves the website (from `backend/public`) and the API together 
 ```
 backend/src/
   server.js          Express app, serves API + Angular build
-  db.js              SQLite schema, settings, first-run seed data
+  db.js              Database layer (MySQL or SQLite), schema, settings, first-run seed data
   availability.js    Slot / technician availability rules
   bookings.js        Create / update bookings, auto-assign technician
   whatsapp.js        Message templates + Meta Cloud / Twilio / manual providers

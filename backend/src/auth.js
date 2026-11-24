@@ -39,13 +39,13 @@ setInterval(() => {
   for (const [k, e] of failures) if (e.lockedUntil < now && e.times.every((t) => now - t > LOCK_MS)) failures.delete(k);
 }, 10 * 60_000).unref();
 
-export function login(username, password, ip) {
+export async function login(username, password, ip) {
   const user = String(username || '').trim().toLowerCase();
   const keys = RULES.map((r) => r.key(ip, user));
   const mins = lockedFor(keys);
   if (mins) throw new HttpError(429, `Too many attempts. Try again in ${mins} minute(s).`);
 
-  const admin = db.prepare('SELECT * FROM admins WHERE lower(username) = ?').get(user);
+  const admin = await db.prepare('SELECT * FROM admins WHERE lower(username) = ?').get(user);
   if (!admin || !verifyPassword(String(password || ''), admin.password_hash)) {
     recordFailure(keys);
     throw new HttpError(401, 'Invalid username or password');

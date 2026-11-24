@@ -16,9 +16,9 @@
  */
 import crypto from 'node:crypto';
 import jwt from 'jsonwebtoken';
-import { db, getSettings, tx } from './db.js';
+import { db, getSettings } from './db.js';
 import { sendMessage, waLink, whatsappProvider } from './whatsapp.js';
-import { config, hashPassword, HttpError, isValidPhone, normalizePhone, verifyPassword } from './util.js';
+import { config, hashPassword, HttpError, isValidPhone, normalizePhone, nowIso, verifyPassword } from './util.js';
 import { rateLimit } from './security.js';
 
 const REQUEST_TTL_MS = 10 * 60_000; // time to send the WhatsApp message
@@ -49,7 +49,7 @@ function shortRef() {
 
 // ---------- OTP requests ----------
 /** Step 1: customer entered their mobile number on the website. */
-export function startOtp({ phone: rawPhone, purpose = 'login', customerId = null, ip }) {
+export async function startOtp({ phone: rawPhone, purpose = 'login', customerId = null, ip }) {
   const mode = otpMode();
   if (mode === 'off') {
     throw new HttpError(503, 'WhatsApp login is not set up yet. Please contact us on WhatsApp.');
@@ -61,12 +61,12 @@ export function startOtp({ phone: rawPhone, purpose = 'login', customerId = null
 
   const now = Date.now();
   // Only the newest request for a number is valid
-  db.prepare("UPDATE login_requests SET status = 'expired' WHERE phone = ? AND status IN ('waiting','sent')").run(phone);
-  db.prepare('DELETE FROM login_requests WHERE expires_at < ?').run(now - 24 * 3_600_000);
+  await db.prepare("UPDATE login_requests SET status = 'expired' WHERE phone = ? AND status IN ('waiting','sent')").run(phone);
+  await db.prepare('DELETE FROM login_requests WHERE expires_at < ?').run(now - 24 * 3_600_000);
 
   const id = crypto.randomBytes(16).toString('hex');
   const ref = shortRef();
-  db.prepare(`INSERT INTO login_requests (id, ref, phone, purpose, customer_id, created_at, expires_at)
+  await db.prepare(`INSERT INTO login_requests (id, ref, phone, purpose, customer_id, created_at, expires_at)
               VALUES (?, ?, ?, ?, ?, ?, ?)`).run(id, ref, phone, purpose, customerId, now, now + REQUEST_TTL_MS);
 
   const business = getSettings().business_whatsapp;
@@ -81,23 +81,23 @@ export function startOtp({ phone: rawPhone, purpose = 'login', customerId = null
 
   if (mode === 'dev') {
     // Local testing without WhatsApp: create the code now and show it on screen.
-    const code = issueCode(id);
+    const code = await issueCode(id);
     console.log(`[login] DEV MODE code for +${phone}: ${code}`);
     out.devCode = code;
   }
   return out;
 }
 
-function issueCode(requestId) {
+async function issueCode(requestId) {
   const code = newCode();
-  db.prepare(`UPDATE login_requests SET status = 'sent', code_hash = ?, sends = sends + 1, attempts = 0, expires_at = ?
+  await db.prepare(`UPDATE login_requests SET status = 'sent', code_hash = ?, sends = sends + 1, attempts = 0, expires_at = ?
               WHERE id = ?`).run(hashCode(requestId, code), Date.now() + CODE_TTL_MS, requestId);
   return code;
 }
 
 /** The website polls this to show "code sent - check WhatsApp". */
-export function otpStatus(requestId) {
-  const r = db.prepare('SELECT status, expires_at FROM login_requests WHERE id = ?').get(String(requestId || ''));
+export async function otpStatus(requestId) {
+  const r = await db.prepare('SELECT status, expires_at FROM login_requests WHERE id = ?').get(String(requestId || ''));
   if (!r) throw new HttpError(404, 'Login request not found. Please start again.');
   const status = ['waiting', 'sent'].includes(r.status) && r.expires_at < Date.now() ? 'expired' : r.status;
   return { status };
@@ -110,7 +110,7 @@ export function otpStatus(requestId) {
 export async function handleInboundMessage(fromRaw, text = '') {
   const phone = normalizePhone(fromRaw);
   const now = Date.now();
-  const req = db.prepare(`SELECT * FROM login_requests WHERE phone = ? AND status IN ('waiting','sent') AND expires_at > ?
+  const req = await db.prepare(`SELECT * FROM login_requests WHERE phone = ? AND status IN ('waiting','sent') AND expires_at > ?
                           ORDER BY created_at DESC LIMIT 1`).get(phone, now);
   const s = getSettings();
 
@@ -125,7 +125,7 @@ export async function handleInboundMessage(fromRaw, text = '') {
   }
   if (req.sends >= MAX_SENDS) return true; // stop someone using us to spam a number
 
-  const code = issueCode(req.id);
+  const code = await issueCode(req.id);
   const body = `🔐 *${code}* is your ${s.business_name} login code.\n\n` +
     `It expires in ${CODE_TTL_MS / 60_000} minutes. Do not share this code with anyone - our team will never ask for it.`;
   await sendMessage({
@@ -136,14 +136,14 @@ export async function handleInboundMessage(fromRaw, text = '') {
 }
 
 /** Step 3: customer typed the code on the website. Returns the verified request. */
-export function verifyOtp({ requestId, code }) {
-  const req = db.prepare('SELECT * FROM login_requests WHERE id = ?').get(String(requestId || ''));
+export async function verifyOtp({ requestId, code }) {
+  const req = await db.prepare('SELECT * FROM login_requests WHERE id = ?').get(String(requestId || ''));
   if (!req || req.status === 'used' || req.status === 'expired') {
     throw new HttpError(400, 'This code has expired. Please request a new one.');
   }
   if (req.status !== 'sent') throw new HttpError(400, 'We have not sent your code yet. Please send the WhatsApp message first.');
   if (req.expires_at < Date.now()) {
-    db.prepare("UPDATE login_requests SET status = 'expired' WHERE id = ?").run(req.id);
+    await db.prepare("UPDATE login_requests SET status = 'expired' WHERE id = ?").run(req.id);
     throw new HttpError(400, 'This code has expired. Please request a new one.');
   }
   if (req.attempts >= MAX_ATTEMPTS) throw new HttpError(429, 'Too many wrong codes. Please request a new one.');
@@ -151,11 +151,11 @@ export function verifyOtp({ requestId, code }) {
   const given = Buffer.from(hashCode(req.id, String(code || '').replace(/\D/g, '')), 'hex');
   const known = Buffer.from(req.code_hash, 'hex');
   if (!crypto.timingSafeEqual(given, known)) {
-    db.prepare('UPDATE login_requests SET attempts = attempts + 1 WHERE id = ?').run(req.id);
+    await db.prepare('UPDATE login_requests SET attempts = attempts + 1 WHERE id = ?').run(req.id);
     const left = MAX_ATTEMPTS - req.attempts - 1;
     throw new HttpError(400, left > 0 ? `Wrong code. ${left} attempt(s) left.` : 'Too many wrong codes. Please request a new one.');
   }
-  db.prepare("UPDATE login_requests SET status = 'used' WHERE id = ?").run(req.id);
+  await db.prepare("UPDATE login_requests SET status = 'used' WHERE id = ?").run(req.id);
   return req;
 }
 
@@ -170,12 +170,12 @@ export function customerDto(c) {
 
 const getCustomer = (id) => db.prepare('SELECT * FROM customers WHERE id = ?').get(id);
 
-function lastBookingName(phone) {
-  return db.prepare('SELECT customer_name FROM bookings WHERE phone = ? ORDER BY id DESC LIMIT 1').get(phone)?.customer_name || '';
+async function lastBookingName(phone) {
+  return (await db.prepare('SELECT customer_name FROM bookings WHERE phone = ? ORDER BY id DESC LIMIT 1').get(phone))?.customer_name || '';
 }
 
-function touch(id) {
-  db.prepare("UPDATE customers SET last_login_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?").run(id);
+async function touch(id) {
+  await db.prepare('UPDATE customers SET last_login_at = ? WHERE id = ?').run(nowIso(), id);
   return getCustomer(id);
 }
 
@@ -185,61 +185,62 @@ export function session(customer) {
 }
 
 /** WhatsApp OTP login: find or create the customer for this number. */
-export function loginWithPhone(phone) {
-  let c = db.prepare('SELECT * FROM customers WHERE phone = ?').get(phone);
+export async function loginWithPhone(phone) {
+  let c = await db.prepare('SELECT * FROM customers WHERE phone = ?').get(phone);
   if (!c) {
-    const info = db.prepare('INSERT INTO customers (phone, name, phone_verified) VALUES (?, ?, 1)').run(phone, lastBookingName(phone));
-    c = getCustomer(Number(info.lastInsertRowid));
+    const info = await db.prepare('INSERT INTO customers (phone, name, phone_verified, created_at) VALUES (?, ?, 1, ?)')
+      .run(phone, await lastBookingName(phone), nowIso());
+    c = await getCustomer(Number(info.lastInsertRowid));
   } else if (!c.phone_verified) {
     // The code proves who owns this number. A password on this account was set by someone who
     // only typed the number in, so remove it; the owner can set their own from My Orders.
-    db.prepare('UPDATE customers SET phone_verified = 1, password_hash = NULL WHERE id = ?').run(c.id);
+    await db.prepare('UPDATE customers SET phone_verified = 1, password_hash = NULL WHERE id = ?').run(c.id);
   }
-  return session(touch(c.id));
+  return session(await touch(c.id));
 }
 
 /** Google login: find or create the customer for this Google account. */
 export async function loginWithGoogle(credential) {
   const g = await verifyGoogleCredential(credential);
-  let c = db.prepare('SELECT * FROM customers WHERE google_sub = ?').get(g.sub);
+  let c = await db.prepare('SELECT * FROM customers WHERE google_sub = ?').get(g.sub);
   if (c) {
-    db.prepare('UPDATE customers SET email = ?, picture = ?, name = CASE WHEN name = \'\' THEN ? ELSE name END WHERE id = ?')
+    await db.prepare('UPDATE customers SET email = ?, picture = ?, name = CASE WHEN name = \'\' THEN ? ELSE name END WHERE id = ?')
       .run(g.email || '', g.picture || '', g.name || '', c.id);
   } else {
-    const info = db.prepare('INSERT INTO customers (google_sub, email, name, picture) VALUES (?, ?, ?, ?)')
-      .run(g.sub, g.email || '', g.name || '', g.picture || '');
+    const info = await db.prepare('INSERT INTO customers (google_sub, email, name, picture, created_at) VALUES (?, ?, ?, ?, ?)')
+      .run(g.sub, g.email || '', g.name || '', g.picture || '', nowIso());
     c = { id: Number(info.lastInsertRowid) };
   }
-  return session(touch(c.id));
+  return session(await touch(c.id));
 }
 
 /**
  * A Google customer verified a mobile number. If that number already has an
  * account (from an earlier WhatsApp login), merge the two into one.
  */
-export function linkPhone(customerId, phone) {
-  const me = getCustomer(customerId);
+export async function linkPhone(customerId, phone) {
+  const me = await getCustomer(customerId);
   if (!me) throw new HttpError(401, 'Please log in again');
   if (me.phone === phone) return session(me);
 
-  const owner = db.prepare('SELECT * FROM customers WHERE phone = ?').get(phone);
+  const owner = await db.prepare('SELECT * FROM customers WHERE phone = ?').get(phone);
   if (owner && owner.id !== me.id) {
     if (owner.google_sub && owner.google_sub !== me.google_sub) {
       throw new HttpError(409, 'This mobile number is already linked to a different Google account.');
     }
-    const merged = tx(() => {
-      db.prepare('DELETE FROM customers WHERE id = ?').run(me.id);
-      db.prepare(`UPDATE customers SET google_sub = ?, email = ?, picture = ?, phone_verified = 1,
+    const merged = await db.tx(async (t) => {
+      await t.prepare('DELETE FROM customers WHERE id = ?').run(me.id);
+      await t.prepare(`UPDATE customers SET google_sub = ?, email = ?, picture = ?, phone_verified = 1,
                   password_hash = CASE WHEN phone_verified = 1 THEN password_hash ELSE NULL END,
                   name = CASE WHEN name = '' THEN ? ELSE name END WHERE id = ?`)
         .run(me.google_sub, me.email, me.picture, me.name, owner.id);
       return owner.id;
     });
-    return session(touch(merged));
+    return session(await touch(merged));
   }
-  db.prepare("UPDATE customers SET phone = ?, phone_verified = 1, name = CASE WHEN name = '' THEN ? ELSE name END WHERE id = ?")
-    .run(phone, lastBookingName(phone), me.id);
-  return session(touch(me.id));
+  await db.prepare("UPDATE customers SET phone = ?, phone_verified = 1, name = CASE WHEN name = '' THEN ? ELSE name END WHERE id = ?")
+    .run(phone, await lastBookingName(phone), me.id);
+  return session(await touch(me.id));
 }
 
 // ---------- Mobile number + password ----------
@@ -257,7 +258,7 @@ export function checkCustomerPassword(password) {
  * The number is NOT proven (no code is sent), so the account only shows bookings made
  * while logged in to it - never other people's bookings that happen to use this number.
  */
-export function registerWithPassword({ name: rawName, phone: rawPhone, password, ip }) {
+export async function registerWithPassword({ name: rawName, phone: rawPhone, password, ip }) {
   limit(`register-ip:${ip}`, 10, 60 * 60_000, 'Too many sign-ups from this device. Please try again later.');
   const name = String(rawName || '').trim().slice(0, 100);
   if (name.length < 2) throw new HttpError(400, 'Please enter your name');
@@ -265,78 +266,78 @@ export function registerWithPassword({ name: rawName, phone: rawPhone, password,
   const phone = normalizePhone(rawPhone);
   const pass = checkCustomerPassword(password);
 
-  if (db.prepare('SELECT 1 FROM customers WHERE phone = ?').get(phone)) {
+  if (await db.prepare('SELECT 1 AS x FROM customers WHERE phone = ?').get(phone)) {
     throw new HttpError(409, 'This mobile number already has an account. Please log in, or WhatsApp us if you forgot the password.');
   }
-  const info = db.prepare('INSERT INTO customers (phone, name, password_hash, phone_verified) VALUES (?, ?, ?, 0)')
-    .run(phone, name, hashPassword(pass));
-  return session(touch(Number(info.lastInsertRowid)));
+  const info = await db.prepare('INSERT INTO customers (phone, name, password_hash, phone_verified, created_at) VALUES (?, ?, ?, 0, ?)')
+    .run(phone, name, hashPassword(pass), nowIso());
+  return session(await touch(Number(info.lastInsertRowid)));
 }
 
 /** Log in with mobile number + password. */
-export function loginWithPassword({ phone: rawPhone, password, ip }) {
+export async function loginWithPassword({ phone: rawPhone, password, ip }) {
   const phone = isValidPhone(rawPhone) ? normalizePhone(rawPhone) : '';
   limit(`pw-ip:${ip}`, 30, 15 * 60_000, 'Too many login attempts. Please try again in a few minutes.');
   if (phone) limit(`pw-phone:${phone}`, 8, 15 * 60_000, 'Too many attempts for this number. Please try again in 15 minutes.');
-  const c = phone ? db.prepare('SELECT * FROM customers WHERE phone = ?').get(phone) : null;
+  const c = phone ? await db.prepare('SELECT * FROM customers WHERE phone = ?').get(phone) : null;
   if (!c || !c.password_hash || !verifyPassword(String(password || ''), c.password_hash)) {
     throw new HttpError(401, 'Wrong mobile number or password.');
   }
-  return session(touch(c.id));
+  return session(await touch(c.id));
 }
 
 /** Change (or, for WhatsApp/Google accounts, set) the password of the signed-in customer. */
-export function changeCustomerPassword(customerId, currentPassword, newPassword) {
-  const c = getCustomer(customerId);
+export async function changeCustomerPassword(customerId, currentPassword, newPassword) {
+  const c = await getCustomer(customerId);
   if (!c) throw new HttpError(401, 'Please log in again');
   if (!c.phone) throw new HttpError(400, 'Please confirm your mobile number first.');
   if (c.password_hash && !verifyPassword(String(currentPassword || ''), c.password_hash)) {
     throw new HttpError(400, 'Your current password is wrong.');
   }
   const pass = checkCustomerPassword(newPassword);
-  db.prepare('UPDATE customers SET password_hash = ? WHERE id = ?').run(hashPassword(pass), c.id);
-  return customerDto(getCustomer(c.id));
+  await db.prepare('UPDATE customers SET password_hash = ? WHERE id = ?').run(hashPassword(pass), c.id);
+  return customerDto(await getCustomer(c.id));
 }
 
 /** Admin: give a customer a temporary password (they asked for help on WhatsApp). */
-export function resetCustomerPassword(customerId) {
-  const c = getCustomer(customerId);
+export async function resetCustomerPassword(customerId) {
+  const c = await getCustomer(customerId);
   if (!c) throw new HttpError(404, 'Customer not found');
   if (!c.phone) throw new HttpError(400, 'This customer has no mobile number yet.');
   const alphabet = 'abcdefghjkmnpqrstuvwxyz';
   const letters = [...crypto.randomBytes(5)].map((b) => alphabet[b % alphabet.length]).join('');
   const temp = `${letters}${crypto.randomInt(1000, 10000)}`; // e.g. "kfmrw4821": easy to type, 8+ chars
-  db.prepare('UPDATE customers SET password_hash = ? WHERE id = ?').run(hashPassword(temp), c.id);
-  return { tempPassword: temp, customer: customerDto(getCustomer(c.id)) };
+  await db.prepare('UPDATE customers SET password_hash = ? WHERE id = ?').run(hashPassword(temp), c.id);
+  return { tempPassword: temp, customer: customerDto(await getCustomer(c.id)) };
 }
 
 /** For optional sign-in (e.g. booking): the customer id from a valid token, otherwise null. */
-export function customerIdFromRequest(req) {
+export async function customerIdFromRequest(req) {
   const header = req.headers.authorization || '';
   if (!header.startsWith('Bearer ')) return null;
   try {
     const payload = jwt.verify(header.slice(7), config.jwtSecret, { algorithms: ['HS256'] });
     if (payload.role !== 'customer') return null;
-    return getCustomer(payload.sub)?.id ?? null;
+    return (await getCustomer(payload.sub))?.id ?? null;
   } catch {
     return null;
   }
 }
 
-export function updateName(customerId, name) {
-  db.prepare('UPDATE customers SET name = ? WHERE id = ?').run(String(name || '').trim().slice(0, 100), customerId);
-  return customerDto(getCustomer(customerId));
+export async function updateName(customerId, name) {
+  await db.prepare('UPDATE customers SET name = ? WHERE id = ?').run(String(name || '').trim().slice(0, 100), customerId);
+  return customerDto(await getCustomer(customerId));
 }
 
 /** Express middleware: requires a customer token; sets req.customer (fresh from the DB). */
-export function requireCustomer(req, _res, next) {
+export async function requireCustomer(req, _res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token) return next(new HttpError(401, 'Please log in'));
   try {
     const payload = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] });
     if (payload.role !== 'customer') throw new Error('not a customer');
-    const c = getCustomer(payload.sub);
+    const c = await getCustomer(payload.sub);
     if (!c) throw new Error('customer gone');
     req.customer = c;
     next();

@@ -8,8 +8,7 @@
  *
  * All dates use the business time zone (APP_TIMEZONE).
  */
-import { db } from './db.js';
-import { CATEGORIES } from './db.js';
+import { CATEGORIES, db } from './db.js';
 import { addDays, dayOfWeek, todayStr } from './util.js';
 
 const ACTIVE = ['pending', 'confirmed', 'in_progress'];
@@ -66,11 +65,11 @@ function trendLine(values) {
   return (x) => Math.max(0, Math.round(my + slope * (x - mx)));
 }
 
-function loadRows() {
-  return db.prepare(`
+async function loadRows() {
+  return (await db.prepare(`
     SELECT b.id, b.created_at, b.date, b.status, b.completed_at, b.cancelled_at,
            b.amount_collected, b.payment_mode, b.paid_at, s.price, s.category
-    FROM bookings b JOIN services s ON s.id = b.service_id`).all()
+    FROM bookings b JOIN services s ON s.id = b.service_id`).all())
     .map((r) => ({
       ...r,
       orderedOn: localDate(r.created_at),
@@ -93,9 +92,9 @@ function tally(rows, inBucket) {
   };
 }
 
-export function buildReport(groupParam = 'day') {
+export async function buildReport(groupParam = 'day') {
   const group = GROUPS[groupParam] ? groupParam : 'day';
-  const rows = loadRows();
+  const rows = await loadRows();
   const today = todayStr();
 
   // ---------- Periods for the charts and table ----------

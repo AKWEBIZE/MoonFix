@@ -14,7 +14,7 @@ import { checkStartupSafety, securityHeaders } from './security.js';
 import { startScheduler } from './scheduler.js';
 import { whatsappProvider } from './whatsapp.js';
 
-checkStartupSafety(); // a live server (NODE_ENV=production) stops here if settings are unsafe
+await checkStartupSafety(); // a live server (NODE_ENV=production) stops here if settings are unsafe
 
 const app = express();
 // Only trust X-Forwarded-For when a known proxy (e.g. Nginx) is in front. See TRUST_PROXY in .env.

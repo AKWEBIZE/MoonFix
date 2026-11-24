@@ -24,7 +24,7 @@ const serviceDto = (s) => ({
   name: s.name, description: s.description, price: s.price, durationMin: s.duration_min,
 });
 
-r.get('/config', (_req, res) => {
+r.get('/config', async (_req, res) => {
   const s = getSettings();
   ok(res, {
     businessName: s.business_name,
@@ -37,28 +37,28 @@ r.get('/config', (_req, res) => {
   });
 });
 
-r.get('/services', (_req, res) => {
-  ok(res, db.prepare('SELECT * FROM services WHERE active = 1 ORDER BY sort_order, id').all().map(serviceDto));
+r.get('/services', async (_req, res) => {
+  ok(res, (await db.prepare('SELECT * FROM services WHERE active = 1 ORDER BY sort_order, id').all()).map(serviceDto));
 });
 
-function categoryOf(serviceId) {
-  const s = db.prepare('SELECT category FROM services WHERE id = ? AND active = 1').get(Number(serviceId));
+async function categoryOf(serviceId) {
+  const s = await db.prepare('SELECT category FROM services WHERE id = ? AND active = 1').get(Number(serviceId));
   if (!s) throw new HttpError(400, 'Invalid service');
   return s.category;
 }
 
-r.get('/dates', (req, res) => {
-  ok(res, upcomingDates(req.query.serviceId ? categoryOf(req.query.serviceId) : null));
+r.get('/dates', async (req, res) => {
+  ok(res, await upcomingDates(req.query.serviceId ? await categoryOf(req.query.serviceId) : null));
 });
 
-r.get('/slots', (req, res) => {
+r.get('/slots', async (req, res) => {
   const { date, serviceId } = req.query;
   if (!isDateStr(date)) throw new HttpError(400, 'Invalid date');
-  ok(res, slotsForDate(date, categoryOf(serviceId)));
+  ok(res, await slotsForDate(date, await categoryOf(serviceId)));
 });
 
 r.post('/bookings', honeypot, bookingHourly, bookingDaily, async (req, res) => {
-  const b = await createBooking(req.body || {}, { customerId: customerIdFromRequest(req) });
+  const b = await createBooking(req.body || {}, { customerId: await customerIdFromRequest(req) });
   ok(res, publicView(b), 201);
 });
 
@@ -70,18 +70,18 @@ function publicView(b) {
   };
 }
 
-function findOwn(ref, phone) {
-  const b = getBookingByRef(ref || '');
+async function findOwn(ref, phone) {
+  const b = await getBookingByRef(ref || '');
   if (!b || b.phone !== normalizePhone(phone)) throw new HttpError(404, 'No booking found for this ID and mobile number');
   return b;
 }
 
-r.post('/bookings/track', lookupLimit, (req, res) => {
-  ok(res, publicView(findOwn(req.body?.ref, req.body?.phone)));
+r.post('/bookings/track', lookupLimit, async (req, res) => {
+  ok(res, publicView(await findOwn(req.body?.ref, req.body?.phone)));
 });
 
 r.post('/bookings/cancel', lookupLimit, async (req, res) => {
-  const b = findOwn(req.body?.ref, req.body?.phone);
+  const b = await findOwn(req.body?.ref, req.body?.phone);
   if (!['pending', 'confirmed'].includes(b.status)) throw new HttpError(400, 'This booking can no longer be cancelled online. Please contact us on WhatsApp.');
   const { booking } = await updateBooking(b.id, { status: 'cancelled', adminNotes: `${b.adminNotes}\nCancelled by customer online.`.trim() });
   ok(res, publicView(booking));

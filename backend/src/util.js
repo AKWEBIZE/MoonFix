@@ -1,4 +1,20 @@
 import crypto from 'node:crypto';
+import os from 'node:os';
+import path from 'node:path';
+
+/**
+ * Where the SQLite database lives.
+ * - DB_FILE set: use it.
+ * - Live server (NODE_ENV=production): ~/moonfix-data/app.db in the hosting account's home folder,
+ *   OUTSIDE the app folder. Hosts like Hostinger put every deploy in a fresh folder, so a database
+ *   inside the app folder would be wiped on each redeploy.
+ * - Local development: ./data/app.db
+ */
+function defaultDbFile() {
+  if (process.env.DB_FILE) return path.resolve(process.env.DB_FILE);
+  if (process.env.NODE_ENV === 'production') return path.join(os.homedir(), 'moonfix-data', 'app.db');
+  return path.resolve('./data/app.db');
+}
 
 /**
  * TRUST_PROXY: how many proxies (e.g. Nginx) sit in front of this server.
@@ -18,7 +34,15 @@ export const config = {
   port: Number(process.env.PORT || 4000),
   corsOrigins: (process.env.CORS_ORIGINS || 'http://localhost:4200').split(',').map((s) => s.trim()).filter(Boolean),
   tz: process.env.APP_TIMEZONE || 'Asia/Kolkata',
-  dbFile: process.env.DB_FILE || './data/app.db',
+  dbFile: defaultDbFile(),
+  // MySQL (e.g. Hostinger): used instead of the SQLite file when DB_HOST is set
+  db: {
+    host: (process.env.DB_HOST || '').trim(),
+    port: Number(process.env.DB_PORT || 3306),
+    name: (process.env.DB_NAME || '').trim(),
+    user: (process.env.DB_USER || '').trim(),
+    password: process.env.DB_PASSWORD || '',
+  },
   jwtSecret: process.env.JWT_SECRET || 'dev-only-secret-change-me',
   adminUsername: process.env.ADMIN_USERNAME || 'admin',
   adminPassword: process.env.ADMIN_PASSWORD || 'ChangeMe@123',
@@ -30,6 +54,9 @@ export const config = {
   // Shows the OTP on screen instead of WhatsApp. For local testing only - never in production.
   customerOtpDev: String(process.env.CUSTOMER_OTP_DEV || '').toLowerCase() === 'true',
 };
+
+/** Current time as an ISO string, e.g. "2026-11-25T10:15:00.000Z" (stored in *_at columns). */
+export const nowIso = () => new Date().toISOString();
 
 export class HttpError extends Error {
   constructor(status, message) {

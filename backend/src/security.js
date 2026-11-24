@@ -4,6 +4,8 @@
  *  - a small in-memory rate limiter shared by all routes
  *  - HTTP security headers (helmet + Content-Security-Policy)
  */
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import helmet from 'helmet';
 import { db } from './db.js';
 import { config, HttpError, verifyPassword } from './util.js';
@@ -11,8 +13,8 @@ import { config, HttpError, verifyPassword } from './util.js';
 /** The password that .env.example ships with. A live server must never accept it. */
 export const DEFAULT_ADMIN_PASSWORD = 'ChangeMe@123';
 
-export function usesDefaultPassword(adminId) {
-  const admin = db.prepare('SELECT password_hash FROM admins WHERE id = ?').get(adminId);
+export async function usesDefaultPassword(adminId) {
+  const admin = await db.prepare('SELECT password_hash FROM admins WHERE id = ?').get(adminId);
   return !!admin && verifyPassword(DEFAULT_ADMIN_PASSWORD, admin.password_hash);
 }
 
@@ -21,7 +23,7 @@ export function usesDefaultPassword(adminId) {
  * Production (NODE_ENV=production): any problem stops the server.
  * Development: problems are printed as warnings.
  */
-export function checkStartupSafety() {
+export async function checkStartupSafety() {
   const problems = [];
   const provider = (process.env.WHATSAPP_PROVIDER || 'none').toLowerCase();
 
@@ -31,8 +33,9 @@ export function checkStartupSafety() {
   if (!process.env.JWT_SECRET || config.jwtSecret.length < 32 || /replace-with|dev-only/.test(config.jwtSecret)) {
     problems.push('JWT_SECRET must be a long random value (at least 32 characters).');
   }
-  const admins = db.prepare('SELECT id, username FROM admins').all();
-  const weak = admins.filter((a) => usesDefaultPassword(a.id)).map((a) => a.username);
+  const admins = await db.prepare('SELECT id, username FROM admins').all();
+  const weak = [];
+  for (const a of admins) if (await usesDefaultPassword(a.id)) weak.push(a.username);
   if (weak.length) {
     problems.push(`Admin "${weak.join('", "')}" still uses the default password. Change it in Admin > Settings.`);
   }
@@ -41,6 +44,13 @@ export function checkStartupSafety() {
   }
   if (config.isProduction && config.corsOrigins.some((o) => /localhost|127\.0\.0\.1/.test(o))) {
     problems.push('CORS_ORIGINS still points at localhost. Set it to your real website address.');
+  }
+
+  // A database inside the app folder is wiped by hosts that deploy every version into a fresh folder
+  const appDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+  if (config.isProduction && path.resolve(config.dbFile).startsWith(appDir + path.sep)) {
+    console.warn(`[security] DB_FILE (${config.dbFile}) is inside the app folder. If your host deploys each version into
+  a new folder, every redeploy starts with an EMPTY database. Point DB_FILE outside the app, e.g. ~/moonfix-data/app.db`);
   }
 
   if (!problems.length) return;

@@ -158,13 +158,13 @@ export async function sendMessage({ bookingId = null, recipientType, phone, kind
     console.error(`[whatsapp] ${kind} -> ${phone} failed: ${error}`);
   }
   const stored = logBody ?? body;
-  const info = db.prepare(
-    'INSERT INTO whatsapp_messages (booking_id, recipient_type, phone, kind, body, status, provider, error) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-  ).run(bookingId, recipientType, phone, kind, stored, status, provider, error);
+  const info = await db.prepare(
+    'INSERT INTO whatsapp_messages (booking_id, recipient_type, phone, kind, body, status, provider, error, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+  ).run(bookingId, recipientType, phone, kind, stored, status, provider, error, new Date().toISOString());
   return { id: Number(info.lastInsertRowid), status, error, link: waLink(phone, stored) };
 }
 
-export function loadBookingForMessage(id) {
+export async function loadBookingForMessage(id) {
   return db.prepare(`
     SELECT b.*, s.name AS service_name, s.category, t.start_time, t.end_time,
            tech.name AS technician_name, tech.phone AS technician_phone
@@ -177,7 +177,7 @@ export function loadBookingForMessage(id) {
 
 /** Fire a templated event for a booking. Recipient is chosen by the template kind. */
 export async function notify(kind, bookingId, { customText } = {}) {
-  const b = loadBookingForMessage(bookingId);
+  const b = await loadBookingForMessage(bookingId);
   if (!b) return null;
   const s = getSettings();
 
