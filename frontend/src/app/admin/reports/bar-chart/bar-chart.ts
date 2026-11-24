@@ -49,7 +49,8 @@ export class BarChart {
 
   max = computed(() => {
     const top = Math.max(0, ...this.bars().map((b) => b.value));
-    return this.kind() === 'count' ? Math.max(niceMax(top), 4) : niceMax(top);
+    // Money axis starts at ₹1k so an empty chart reads ₹0 / ₹500 / ₹1k (not ₹0 / ₹1 / ₹1)
+    return this.kind() === 'count' ? Math.max(niceMax(top), 4) : Math.max(niceMax(top), 1000);
   });
   /** Index of the tallest bar (the only one labelled directly) */
   peak = computed(() => {
