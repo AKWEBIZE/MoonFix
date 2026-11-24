@@ -155,6 +155,11 @@ if (!hasColumn('bookings', 'customer_id')) {
 }
 db.exec('CREATE INDEX IF NOT EXISTS idx_bookings_customer ON bookings(customer_id)');
 
+// Payment collected for a job (entered by staff when the job is done)
+if (!hasColumn('bookings', 'amount_collected')) db.exec('ALTER TABLE bookings ADD COLUMN amount_collected INTEGER'); // rupees
+if (!hasColumn('bookings', 'payment_mode')) db.exec('ALTER TABLE bookings ADD COLUMN payment_mode TEXT'); // cash | upi | card | other
+if (!hasColumn('bookings', 'paid_at')) db.exec('ALTER TABLE bookings ADD COLUMN paid_at TEXT'); // ISO time the payment was recorded
+
 // ---------- Settings ----------
 const DEFAULT_SETTINGS = {
   business_name: config.businessName,

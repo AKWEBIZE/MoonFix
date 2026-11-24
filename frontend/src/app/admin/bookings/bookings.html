@@ -198,6 +198,43 @@
         </button>
       </div>
 
+      <h4>Payment collected</h4>
+      @if (b.status === 'completed' && b.amountCollected === null) {
+        <p class="pay-alert">
+          <app-icon name="rupee" [size]="16" /> Job completed: enter the amount collected so it
+          shows in Reports.
+        </p>
+      }
+      <div class="pay-row">
+        <label class="field">
+          <span>Amount (₹)</span>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            inputmode="numeric"
+            [(ngModel)]="pay.amount"
+            [placeholder]="b.price"
+          />
+        </label>
+        <label class="field">
+          <span>Paid by</span>
+          <select [(ngModel)]="pay.mode">
+            @for (m of payModes; track m[0]) {
+              <option [value]="m[0]">{{ m[1] }}</option>
+            }
+          </select>
+        </label>
+        <button class="btn btn-primary btn-sm" [disabled]="paySaving()" (click)="savePayment()">
+          {{ paySaving() ? 'Saving…' : 'Save payment' }}
+        </button>
+      </div>
+      @if (b.paidAt) {
+        <small class="muted"
+          >Recorded {{ b.paidAt | date: 'd MMM, h:mm a' }} · starting price ₹{{ b.price }}</small
+        >
+      }
+
       <h4>WhatsApp follow-up</h4>
       <div class="wa-buttons">
         @for (k of quickKinds; track k.kind) {

@@ -1,0 +1,50 @@
+<div class="chart" role="img" [attr.aria-label]="ariaLabel()">
+  <div class="plot" [style.height.px]="height()">
+    <!-- recessive grid with 3 ticks -->
+    @for (t of ticks(); track $index) {
+      <div class="grid" [style.bottom.%]="pct(t)">
+        <span>{{ fmt(t, true) }}</span>
+      </div>
+    }
+
+    <div class="cols">
+      @for (b of bars(); track $index; let i = $index) {
+        <div
+          class="col"
+          (mouseenter)="hover.set(i)"
+          (mouseleave)="hover.set(null)"
+          (focus)="hover.set(i)"
+          (blur)="hover.set(null)"
+          tabindex="0"
+          [attr.aria-label]="b.label + ': ' + fmt(b.value) + (b.projected ? ' (projected)' : '')"
+        >
+          <div
+            class="bar"
+            [class.projected]="b.projected"
+            [class.on]="hover() === i"
+            [style.height.%]="pct(b.value)"
+          >
+            @if (i === peak() && hover() !== i) {
+              <span class="peak">{{ fmt(b.value, true) }}</span>
+            }
+          </div>
+          @if (hover() === i) {
+            <div class="tip" [class.left]="i > bars().length / 2">
+              <b>{{ b.fullLabel || b.label }}</b>
+              <span>{{ fmt(b.value) }}{{ b.projected ? ' (projected)' : '' }}</span>
+              @if (b.note) {
+                <small>{{ b.note }}</small>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="xlabels">
+    @for (b of bars(); track $index; let i = $index) {
+      <span>{{ showLabel(i) ? b.label : '' }}</span>
+    }
+  </div>
+</div>

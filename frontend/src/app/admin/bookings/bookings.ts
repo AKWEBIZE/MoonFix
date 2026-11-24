@@ -13,6 +13,8 @@ import {
   Technician,
   TimeSlot,
   WaMessage,
+  PAYMENT_MODE_LABELS,
+  PaymentMode,
 } from '../../core/models';
 import { PhonePipe, PrettyDatePipe, Time12Pipe, ToastService, localToday } from '../../core/ui';
 
@@ -66,6 +68,10 @@ export class BookingsPage {
   allTechs = signal<Technician[]>([]);
   saving = signal(false);
   customText = '';
+  // Payment collected for the selected booking
+  payModes = Object.entries(PAYMENT_MODE_LABELS) as [PaymentMode, string][];
+  pay: { amount: number | null; mode: PaymentMode } = { amount: null, mode: 'cash' };
+  paySaving = signal(false);
   edit: EditForm = {
     date: '',
     slotId: 0,
@@ -121,6 +127,7 @@ export class BookingsPage {
         adminNotes: booking.adminNotes,
         notify: true,
       };
+      this.pay = { amount: booking.amountCollected, mode: booking.paymentMode ?? 'cash' };
       this.loadFree();
     });
   }
@@ -157,6 +164,31 @@ export class BookingsPage {
         this.toast.error(errMsg(e));
       },
     });
+  }
+
+  /** Save the money collected (or clear it with an empty amount). */
+  savePayment() {
+    const b = this.sel();
+    if (!b) return;
+    const amount =
+      this.pay.amount === null || (this.pay.amount as unknown) === ''
+        ? null
+        : Number(this.pay.amount);
+    this.paySaving.set(true);
+    this.api
+      .updateBooking(b.id, { amountCollected: amount, paymentMode: this.pay.mode, notify: false })
+      .subscribe({
+        next: () => {
+          this.paySaving.set(false);
+          this.toast.ok(amount === null ? 'Payment cleared' : 'Payment saved');
+          this.open(b.id);
+          this.load();
+        },
+        error: (e) => {
+          this.paySaving.set(false);
+          this.toast.error(errMsg(e));
+        },
+      });
   }
 
   quickStatus(status: BookingStatus) {

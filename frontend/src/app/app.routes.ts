@@ -67,6 +67,11 @@ export const routes: Routes = [
         title: 'Availability',
       },
       {
+        path: 'reports',
+        loadComponent: () => import('./admin/reports/reports').then((m) => m.ReportsPage),
+        title: 'Reports',
+      },
+      {
         path: 'customers',
         loadComponent: () => import('./admin/customers/customers').then((m) => m.CustomersPage),
         title: 'Customers',

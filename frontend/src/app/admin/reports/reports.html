@@ -1,0 +1,279 @@
+<div class="page-head">
+  <h1>Reports</h1>
+  <div class="head-actions">
+    <div class="seg" role="tablist" aria-label="Group by">
+      @for (g of groups; track g.key) {
+        <button role="tab" [class.active]="group() === g.key" (click)="setGroup(g.key)">
+          {{ g.label }}
+        </button>
+      }
+    </div>
+    <button class="btn btn-outline btn-sm" (click)="exportCsv()" [disabled]="!report()">
+      <app-icon name="download" [size]="16" /> Export CSV
+    </button>
+    <button class="icon-btn" (click)="load()" aria-label="Refresh">
+      <app-icon name="refresh" [size]="16" />
+    </button>
+  </div>
+</div>
+
+@if (report(); as r) {
+  <!-- ========== Headline numbers ========== -->
+  <div class="kpis">
+    @for (
+      k of [
+        { label: 'Today', t: r.kpis.today },
+        { label: 'This week', t: r.kpis.week },
+        { label: 'This month', t: r.kpis.month },
+      ];
+      track k.label
+    ) {
+      <div class="kpi">
+        <small>{{ k.label }}</small>
+        <div class="kpi-pair">
+          <div>
+            <b>{{ k.t.orders }}</b>
+            <span>orders</span>
+          </div>
+          <div>
+            <b>{{ rupees(k.t.collections) }}</b>
+            <span>collected</span>
+          </div>
+        </div>
+        <p class="kpi-foot">{{ k.t.completed }} completed · {{ k.t.cancelled }} cancelled</p>
+      </div>
+    }
+    <div class="kpi">
+      <small>Average bill</small>
+      <b class="solo">{{ r.allTime.avgBill ? rupees(r.allTime.avgBill) : '—' }}</b>
+      <p class="kpi-foot">{{ rupees(r.allTime.collections) }} collected in total</p>
+    </div>
+  </div>
+
+  @if (r.allTime.unrecordedPayments) {
+    <div class="notice warn pay-note">
+      <app-icon name="rupee" [size]="16" />
+      <span>
+        <b
+          >{{ r.allTime.unrecordedPayments }} completed job{{
+            r.allTime.unrecordedPayments > 1 ? 's have' : ' has'
+          }}
+          no payment entered.</b
+        >
+        Collections below only include payments you record. Open the booking →
+        <i>Payment collected</i>.
+      </span>
+      <a class="btn btn-sm btn-outline" routerLink="../bookings" [queryParams]="{}"
+        >Go to Bookings</a
+      >
+    </div>
+  }
+
+  <!-- ========== Orders & collections over time ========== -->
+  <div class="two-col">
+    <div class="card chart-card">
+      <div class="chart-head">
+        <h3>Orders per {{ unit() }}</h3>
+        <span class="muted small">{{ totals().orders }} in this view</span>
+      </div>
+      <app-bar-chart [bars]="orderBars()" kind="count" [ariaLabel]="'Orders per ' + unit()" />
+    </div>
+    <div class="card chart-card">
+      <div class="chart-head">
+        <h3>Collections per {{ unit() }}</h3>
+        <span class="muted small">{{ rupees(totals().collections) }} in this view</span>
+      </div>
+      <app-bar-chart
+        [bars]="collectionBars()"
+        kind="money"
+        [ariaLabel]="'Collections per ' + unit()"
+      />
+    </div>
+  </div>
+
+  <!-- ========== Projection ========== -->
+  <div class="card mt projection">
+    <div class="chart-head">
+      <h3><app-icon name="trend" [size]="18" /> Projection</h3>
+    </div>
+    @if (r.projection.lowData) {
+      <p class="notice low-data">
+        Not much history yet, so these numbers are rough. They get more accurate as more jobs are
+        completed and payments are recorded.
+      </p>
+    }
+
+    <div class="proj-tiles">
+      <div class="proj">
+        <small>Booked · next 7 days</small>
+        <b>{{ rupees(r.projection.next7.expected) }}</b>
+        <span
+          >{{ r.projection.next7.jobs }} upcoming job{{
+            r.projection.next7.jobs === 1 ? '' : 's'
+          }}</span
+        >
+      </div>
+      <div class="proj">
+        <small>Booked · next 30 days</small>
+        <b>{{ rupees(r.projection.next30.expected) }}</b>
+        <span
+          >{{ r.projection.next30.jobs }} upcoming job{{
+            r.projection.next30.jobs === 1 ? '' : 's'
+          }}</span
+        >
+      </div>
+      <div class="proj highlight">
+        <small>This month · projected total</small>
+        <b>{{ rupees(r.projection.month.projectedTotal) }}</b>
+        <span>
+          {{ rupees(r.projection.month.collectedSoFar) }} collected +
+          {{ rupees(r.projection.month.projectedTotal - r.projection.month.collectedSoFar) }}
+          expected ({{ r.projection.month.daysLeft }} day{{
+            r.projection.month.daysLeft === 1 ? '' : 's'
+          }}
+          left)
+        </span>
+      </div>
+    </div>
+
+    <div class="chart-head mt">
+      <h4>Weekly collections: last 8 weeks and next 4 weeks</h4>
+      <div class="legend" aria-hidden="true">
+        <span><i class="sw actual"></i> Actual</span>
+        <span><i class="sw projected"></i> Projected</span>
+      </div>
+    </div>
+    <app-bar-chart
+      [bars]="forecastBars()"
+      kind="money"
+      [height]="200"
+      ariaLabel="Weekly collections, actual and projected"
+    />
+
+    <details class="how">
+      <summary>How is this worked out?</summary>
+      <ul>
+        <li>
+          <b>Booked:</b> upcoming jobs × your average bill for that appliance (or the starting price
+          until there is enough history).
+        </li>
+        <li>
+          <b>This month:</b> money collected so far, plus the larger of (jobs already booked for the
+          rest of the month) and (your average daily collections over the last 28 days × days left).
+        </li>
+        <li>
+          <b>Next 4 weeks:</b> a straight-line trend through the last 8 weeks, never lower than the
+          jobs already booked for that week.
+        </li>
+      </ul>
+    </details>
+  </div>
+
+  <!-- ========== Breakdown for this view ========== -->
+  <div class="two-col mt">
+    <div class="card">
+      <h3>By appliance</h3>
+      <table class="table mini">
+        <thead>
+          <tr>
+            <th>Appliance</th>
+            <th class="num">Orders</th>
+            <th class="num">Collections</th>
+            <th class="num">Share</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of r.byCategory; track c.category) {
+            <tr>
+              <td>{{ c.label }}</td>
+              <td class="num">{{ c.orders }}</td>
+              <td class="num">{{ rupees(c.collections) }}</td>
+              <td class="num">
+                <span class="share"
+                  ><i [style.width.%]="share(c.collections, totals().collections)"></i
+                ></span>
+                {{ share(c.collections, totals().collections) }}%
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3>By payment method</h3>
+      <table class="table mini">
+        <thead>
+          <tr>
+            <th>Paid by</th>
+            <th class="num">Jobs</th>
+            <th class="num">Collections</th>
+            <th class="num">Share</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of r.byPaymentMode; track m.mode) {
+            <tr>
+              <td>{{ modeLabels[m.mode] }}</td>
+              <td class="num">{{ m.jobs }}</td>
+              <td class="num">{{ rupees(m.collections) }}</td>
+              <td class="num">
+                <span class="share"
+                  ><i [style.width.%]="share(m.collections, totals().collections)"></i
+                ></span>
+                {{ share(m.collections, totals().collections) }}%
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ========== Table (same numbers as the charts) ========== -->
+  <div class="card table-card mt">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>{{ unit() === 'day' ? 'Day' : unit() === 'week' ? 'Week' : 'Month' }}</th>
+          <th class="num">Orders</th>
+          <th class="num">Completed</th>
+          <th class="num">Cancelled</th>
+          <th class="num">Collections</th>
+          <th class="num">Paid jobs</th>
+          <th class="num">Avg bill</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of rows(); track p.key) {
+          <tr [class.current]="p.current">
+            <td>
+              {{ p.label }}
+              @if (p.current) {
+                <small>(so far)</small>
+              }
+            </td>
+            <td class="num">{{ p.orders }}</td>
+            <td class="num">{{ p.completed }}</td>
+            <td class="num">{{ p.cancelled }}</td>
+            <td class="num">{{ rupees(p.collections) }}</td>
+            <td class="num">{{ p.paidJobs }}</td>
+            <td class="num">{{ p.avgBill ? rupees(p.avgBill) : '—' }}</td>
+          </tr>
+        }
+      </tbody>
+      <tfoot>
+        <tr>
+          <td>Total</td>
+          <td class="num">{{ totals().orders }}</td>
+          <td class="num">{{ totals().completed }}</td>
+          <td class="num">{{ totals().cancelled }}</td>
+          <td class="num">{{ rupees(totals().collections) }}</td>
+          <td class="num">{{ totals().paidJobs }}</td>
+          <td class="num">{{ totals().avgBill ? rupees(totals().avgBill) : '—' }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+} @else {
+  <p class="muted">{{ loading() ? 'Loading reports…' : 'No data.' }}</p>
+}

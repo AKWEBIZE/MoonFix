@@ -163,6 +163,10 @@ export interface Booking {
   cancelledAt: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Money collected for the job (rupees), entered by staff */
+  amountCollected: number | null;
+  paymentMode: PaymentMode | null;
+  paidAt: string | null;
 }
 
 export interface Technician {
@@ -299,3 +303,60 @@ export const STATUS_LABELS: Record<BookingStatus, string> = {
 };
 
 export const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+// ---------- Payments & reports ----------
+export type PaymentMode = 'cash' | 'upi' | 'card' | 'other';
+export const PAYMENT_MODE_LABELS: Record<PaymentMode, string> = {
+  cash: 'Cash',
+  upi: 'UPI',
+  card: 'Card',
+  other: 'Other',
+};
+
+export type ReportGroup = 'day' | 'week' | 'month';
+
+export interface ReportTally {
+  orders: number;
+  completed: number;
+  cancelled: number;
+  collections: number;
+  paidJobs: number;
+}
+
+export interface ReportPeriod extends ReportTally {
+  key: string;
+  label: string;
+  current: boolean;
+  avgBill: number;
+}
+
+export interface ReportWeek {
+  key: string;
+  label: string;
+  collections: number;
+  orders: number;
+  bookedJobs?: number;
+}
+
+export interface Report {
+  group: ReportGroup;
+  today: string;
+  periods: ReportPeriod[];
+  kpis: { today: ReportTally; week: ReportTally; month: ReportTally };
+  allTime: { orders: number; collections: number; avgBill: number; unrecordedPayments: number };
+  byCategory: { category: Category; label: string; orders: number; collections: number }[];
+  byPaymentMode: { mode: PaymentMode; jobs: number; collections: number }[];
+  projection: {
+    next7: { jobs: number; expected: number };
+    next30: { jobs: number; expected: number };
+    month: {
+      collectedSoFar: number;
+      bookedRestOfMonth: number;
+      runRateRestOfMonth: number;
+      projectedTotal: number;
+      daysLeft: number;
+    };
+    weekly: { history: ReportWeek[]; forecast: ReportWeek[] };
+    lowData: boolean;
+  };
+}

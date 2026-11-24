@@ -1,0 +1,1 @@
+var e={AC:`Air Conditioner`,FRIDGE:`Refrigerator`,WASHING_MACHINE:`Washing Machine`};var n={pending:`Pending`,confirmed:`Confirmed`,in_progress:`In progress`,completed:`Completed`,cancelled:`Cancelled`};var r=[`Sun`,`Mon`,`Tue`,`Wed`,`Thu`,`Fri`,`Sat`];var t={cash:`Cash`,upi:`UPI`,card:`Card`,other:`Other`};export{t as i,n,r,e as t};

@@ -3,6 +3,8 @@ import { Injectable, inject } from '@angular/core';
 import { API_BASE } from './app-settings';
 import {
   AdminCustomer,
+  Report,
+  ReportGroup,
   AvailabilityGrid,
   BlockedDate,
   Booking,
@@ -50,7 +52,14 @@ export class AdminApiService {
       `${this.base}/bookings/${id}`,
     );
   }
-  updateBooking(id: number, patch: Partial<Booking> & { notify?: boolean; force?: boolean }) {
+  updateBooking(
+    id: number,
+    patch: Omit<Partial<Booking>, 'amountCollected'> & {
+      notify?: boolean;
+      force?: boolean;
+      amountCollected?: number | string | null;
+    },
+  ) {
     return this.http.patch<{ booking: Booking; messages: (SendResult & { kind: string })[] }>(
       `${this.base}/bookings/${id}`,
       patch,
@@ -144,6 +153,11 @@ export class AdminApiService {
   }
   saveSettings(s: Partial<Settings>) {
     return this.http.put<Settings>(`${this.base}/settings`, s);
+  }
+
+  // Reports
+  reports(group: ReportGroup) {
+    return this.http.get<Report>(`${this.base}/reports`, { params: { group } });
   }
 
   // Customers (website accounts)

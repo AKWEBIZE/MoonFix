@@ -21,6 +21,7 @@ function checkPhoneLimits(phone) {
 import { notify } from './whatsapp.js';
 
 export const STATUSES = ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'];
+export const PAYMENT_MODES = ['cash', 'upi', 'card', 'other'];
 
 const BASE_SELECT = `
   SELECT b.*, s.name AS service_name, s.category, s.price,
@@ -56,6 +57,9 @@ export function toDto(b) {
     technicianPhone: b.technician_phone,
     status: b.status,
     customerId: b.customer_id ?? null,
+    amountCollected: b.amount_collected ?? null,
+    paymentMode: b.payment_mode ?? null,
+    paidAt: b.paid_at ?? null,
     adminNotes: b.admin_notes,
     whatsappOptin: !!b.whatsapp_optin,
     reminderSentAt: b.reminder_sent_at,
@@ -208,6 +212,20 @@ export async function updateBooking(id, input, { notifyCustomer = true } = {}) {
     moved ? 1 : 0,
     nowIso, id,
   );
+
+  // Payment collected (optional): amountCollected = rupees, or null to clear
+  if (input.amountCollected !== undefined) {
+    const raw = input.amountCollected;
+    const amount = raw === null || raw === '' ? null : Math.round(Number(raw));
+    if (amount !== null && !(Number.isFinite(amount) && amount >= 0 && amount <= 10_000_000)) {
+      throw new HttpError(400, 'Enter the amount collected in rupees');
+    }
+    const mode = amount === null ? null
+      : PAYMENT_MODES.includes(input.paymentMode) ? input.paymentMode : current.paymentMode || 'cash';
+    db.prepare(`UPDATE bookings SET amount_collected = ?, payment_mode = ?,
+                 paid_at = CASE WHEN ? IS NULL THEN NULL ELSE COALESCE(paid_at, ?) END WHERE id = ?`)
+      .run(amount, mode, amount, nowIso, id);
+  }
 
   const updated = getBooking(id);
   const sent = [];

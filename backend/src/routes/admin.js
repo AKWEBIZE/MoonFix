@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { login, requireAdmin } from '../auth.js';
 import { DEFAULT_ADMIN_PASSWORD, usesDefaultPassword } from '../security.js';
 import { resetCustomerPassword } from '../customerAuth.js';
+import { buildReport } from '../reports.js';
 import { CATEGORIES, db, getSettings, updateSettings } from '../db.js';
 import { availabilityGrid, freeTechnicians } from '../availability.js';
 import { getBooking, listBookings, STATUSES, updateBooking } from '../bookings.js';
@@ -313,6 +314,9 @@ r.post('/messages/:id/mark-sent', (req, res) => {
   db.prepare("UPDATE whatsapp_messages SET status = 'sent', error = NULL WHERE id = ?").run(Number(req.params.id));
   ok(res, { ok: true });
 });
+
+// ---------- Reports ----------
+r.get('/reports', (req, res) => ok(res, buildReport(String(req.query.group || 'day'))));
 
 // ---------- Customers (website accounts) ----------
 r.get('/customers', (req, res) => {

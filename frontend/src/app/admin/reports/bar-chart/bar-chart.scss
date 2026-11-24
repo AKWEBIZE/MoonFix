@@ -1,0 +1,128 @@
+:host {
+  display: block;
+}
+
+.plot {
+  position: relative;
+  margin-left: 46px; // room for the axis labels
+  border-bottom: 1px solid var(--theme-gray-300); // baseline
+}
+
+// Recessive grid lines + tick labels
+.grid {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--theme-gray-200);
+  pointer-events: none;
+}
+.grid span {
+  position: absolute;
+  right: calc(100% + 8px);
+  top: -0.6em;
+  font-size: 0.72rem;
+  color: var(--theme-muted);
+  white-space: nowrap;
+}
+
+.cols {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px; // 2px surface gap between bars
+}
+
+// The whole column is the hover target (bigger than the bar itself)
+.col {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  outline: none;
+  cursor: default;
+}
+.col:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--theme-primary-200);
+  border-radius: 4px;
+}
+
+.bar {
+  position: relative;
+  width: min(70%, 34px);
+  background: var(--theme-primary);
+  border-radius: 4px 4px 0 0; // rounded data end, square on the baseline
+  transition:
+    height 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+    filter 0.15s;
+}
+.bar.on {
+  filter: brightness(0.9);
+}
+// Projected: darker blue + diagonal stripes, never told apart by colour alone
+.bar.projected {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--theme-primary-darker) 0 5px,
+    rgba(var(--theme-primary-rgb), 0.55) 5px 8px
+  );
+}
+
+.peak {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--theme-text-2);
+  white-space: nowrap;
+}
+
+.tip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: grid;
+  gap: 2px;
+  min-width: 120px;
+  padding: 8px 10px;
+  background: var(--theme-black-3);
+  color: var(--theme-on-dark);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  box-shadow: var(--theme-shadow-lg);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.col .tip {
+  bottom: auto;
+  top: 0;
+}
+.tip.left {
+  left: auto;
+  right: 50%;
+  transform: none;
+}
+.tip small {
+  color: var(--theme-on-dark-muted);
+}
+
+.xlabels {
+  display: flex;
+  gap: 2px;
+  margin: 6px 0 0 46px;
+}
+.xlabels span {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--theme-muted);
+  white-space: nowrap;
+  overflow: visible;
+}
