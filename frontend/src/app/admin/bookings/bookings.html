@@ -1,0 +1,249 @@
+<div class="page-head">
+  <h1>Bookings</h1>
+  <button class="btn btn-outline btn-sm" (click)="load()">
+    <app-icon name="refresh" [size]="16" /> Refresh
+  </button>
+</div>
+
+<div class="filters card">
+  <div class="seg">
+    @for (r of ranges; track r.key) {
+      <button [class.active]="range === r.key" (click)="setRange(r.key)">{{ r.label }}</button>
+    }
+  </div>
+  @if (range === 'date') {
+    <input type="date" [(ngModel)]="date" (change)="load()" />
+  }
+  <select [(ngModel)]="status" (change)="load()">
+    <option value="">All statuses</option>
+    @for (s of statusKeys; track s) {
+      <option [value]="s">{{ labels[s] }}</option>
+    }
+  </select>
+  <input
+    class="grow"
+    type="search"
+    placeholder="Search name, phone, booking ID, address…"
+    [(ngModel)]="q"
+    (keyup.enter)="load()"
+    (search)="load()"
+  />
+</div>
+
+<div class="card table-card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Date & slot</th>
+        <th>Customer</th>
+        <th>Service</th>
+        <th>Technician</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (b of list(); track b.id) {
+        <tr (click)="open(b.id)" [class.row-active]="sel()?.id === b.id">
+          <td>
+            <b>{{ b.date | prettyDate: 'short' }}</b><br /><small
+              >{{ b.slotStart | time12 }} – {{ b.slotEnd | time12 }}</small
+            >
+          </td>
+          <td>
+            <b>{{ b.customerName }}</b><br /><small>{{ b.phone | phone }} · {{ b.ref }}</small>
+          </td>
+          <td>{{ b.serviceName }}</td>
+          <td>{{ b.technicianName || '—' }}</td>
+          <td>
+            <span class="badge" [attr.data-status]="b.status">{{ labels[b.status] }}</span>
+          </td>
+          <td><app-icon name="chevronR" [size]="18" /></td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="muted center">
+            {{ loading() ? 'Loading…' : 'No bookings found' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<!-- Detail drawer -->
+@if (sel(); as b) {
+  <div class="drawer-backdrop" (click)="close()"></div>
+  <aside class="drawer">
+    <div class="drawer-head">
+      <div>
+        <small class="muted">{{ b.ref }} · booked {{ b.createdAt | date: 'd MMM, h:mm a' }}</small>
+        <h2>{{ b.customerName }}</h2>
+      </div>
+      <button class="icon-btn" (click)="close()" aria-label="Close"><app-icon name="x" /></button>
+    </div>
+
+    <div class="drawer-body">
+      <div class="quick-actions">
+        <a class="btn btn-sm btn-outline" [href]="'tel:+' + b.phone"
+          ><app-icon name="phone" [size]="16" /> Call</a
+        >
+        <a
+          class="btn btn-sm btn-wa"
+          [href]="'https://wa.me/' + b.phone"
+          target="_blank"
+          rel="noopener"
+          ><app-icon name="whatsapp" [size]="16" /> Chat</a
+        >
+        @if (b.status === 'confirmed') {
+          <button class="btn btn-sm btn-primary" (click)="quickStatus('in_progress')">
+            Mark on the way
+          </button>
+        }
+        @if (b.status === 'confirmed' || b.status === 'in_progress') {
+          <button class="btn btn-sm btn-success" (click)="quickStatus('completed')">
+            Mark completed
+          </button>
+        }
+        @if (b.status !== 'cancelled' && b.status !== 'completed') {
+          <button class="btn btn-sm btn-danger-outline" (click)="quickStatus('cancelled')">
+            Cancel
+          </button>
+        }
+      </div>
+
+      <dl class="summary compact">
+        <div>
+          <dt>Service</dt>
+          <dd>{{ b.serviceName }} (₹{{ b.price }})</dd>
+        </div>
+        <div>
+          <dt>Phone</dt>
+          <dd>{{ b.phone | phone }}</dd>
+        </div>
+        <div>
+          <dt>Address</dt>
+          <dd>
+            {{ b.address }}{{ b.landmark ? ', ' + b.landmark : ''
+            }}{{ b.pincode ? ' - ' + b.pincode : '' }}
+          </dd>
+        </div>
+        @if (b.brand) {
+          <div>
+            <dt>Brand</dt>
+            <dd>{{ b.brand }}</dd>
+          </div>
+        }
+        @if (b.issue) {
+          <div>
+            <dt>Problem</dt>
+            <dd>{{ b.issue }}</dd>
+          </div>
+        }
+        <div>
+          <dt>WhatsApp</dt>
+          <dd>{{ b.whatsappOptin ? 'Opted in' : 'Not opted in' }}</dd>
+        </div>
+      </dl>
+
+      <h4>Schedule & assignment</h4>
+      <div class="form-grid">
+        <label class="field"
+          ><span>Date</span><input type="date" [(ngModel)]="edit.date" (change)="loadFree()"
+        /></label>
+        <label class="field"
+          ><span>Time slot</span>
+          <select [(ngModel)]="edit.slotId" (change)="loadFree()">
+            @for (s of slots(); track s.id) {
+              <option [ngValue]="s.id">
+                {{ s.start | time12 }} – {{ s.end | time12 }}{{ s.active ? '' : ' (inactive)' }}
+              </option>
+            }
+          </select>
+        </label>
+        <label class="field"
+          ><span>Technician</span>
+          <select [(ngModel)]="edit.technicianId">
+            <option [ngValue]="null">— Unassigned —</option>
+            @for (t of free(); track t.id) {
+              <option [ngValue]="t.id">{{ t.name }}</option>
+            }
+            @if (edit.technicianId && !isFree(edit.technicianId)) {
+              <option [ngValue]="edit.technicianId" disabled>
+                {{ techName(edit.technicianId) }} (not available)
+              </option>
+            }
+          </select>
+          <small class="muted">{{ free().length }} technician(s) free for this slot</small>
+        </label>
+        <label class="field"
+          ><span>Status</span>
+          <select [(ngModel)]="edit.status">
+            @for (s of statusKeys; track s) {
+              <option [value]="s">{{ labels[s] }}</option>
+            }
+          </select>
+        </label>
+        <label class="field full"
+          ><span>Internal notes</span><textarea rows="2" [(ngModel)]="edit.adminNotes"></textarea>
+        </label>
+        <label class="check full"
+          ><input type="checkbox" [(ngModel)]="edit.notify" /> Notify customer & technician on
+          WhatsApp about changes</label
+        >
+      </div>
+      <div class="actions-end">
+        <button class="btn btn-primary" [disabled]="saving()" (click)="save()">
+          {{ saving() ? 'Saving…' : 'Save changes' }}
+        </button>
+      </div>
+
+      <h4>WhatsApp follow-up</h4>
+      <div class="wa-buttons">
+        @for (k of quickKinds; track k.kind) {
+          <button class="btn btn-sm btn-outline" (click)="send(k.kind)">
+            <app-icon name="send" [size]="14" /> {{ k.label }}
+          </button>
+        }
+      </div>
+      <div class="custom-msg">
+        <textarea
+          rows="2"
+          placeholder="Type a custom WhatsApp message to the customer…"
+          [(ngModel)]="customText"
+        ></textarea>
+        <button class="btn btn-wa btn-sm" [disabled]="!customText.trim()" (click)="send('custom')">
+          <app-icon name="whatsapp" [size]="16" /> Send
+        </button>
+      </div>
+
+      <div class="msg-list">
+        @for (m of messages(); track m.id) {
+          <div class="msg">
+            <div class="msg-head">
+              <b>{{ m.kindLabel }}</b> → {{ m.recipientType }}
+              <span class="badge" [attr.data-msg]="m.status">{{ m.status }}</span>
+              <small class="muted">{{ m.createdAt | date: 'd MMM, h:mm a' }}</small>
+            </div>
+            <pre>{{ m.body }}</pre>
+            @if (m.error) {
+              <small class="error">{{ m.error }}</small>
+            }
+            @if (m.status !== 'sent') {
+              <a
+                class="btn btn-wa btn-xs"
+                [href]="m.link"
+                target="_blank"
+                rel="noopener"
+                (click)="markSent(m)"
+                >Open in WhatsApp & mark sent</a
+              >
+            }
+          </div>
+        } @empty {
+          <p class="muted small">No messages yet.</p>
+        }
+      </div>
+    </div>
+  </aside>
+}

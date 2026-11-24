@@ -1,0 +1,297 @@
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid-bg"></div>
+  <div class="container hero-grid">
+    <div>
+      <span class="pill"><span class="live"></span> Technicians available today in your area</span>
+      <h1>Cool homes start with <span class="hl">expert doorstep service</span></h1>
+      <p class="lead">
+        AC servicing, refrigerator and washing machine repair by trained technicians. Pick a time
+        slot that suits you — we confirm instantly and keep you updated on WhatsApp.
+      </p>
+      <div class="hero-cta">
+        <a routerLink="/book" class="btn btn-accent btn-lg"
+          ><app-icon name="calendar" /> Book a technician</a
+        >
+        <a [href]="site.whatsappLink()" target="_blank" rel="noopener" class="btn btn-glass btn-lg"
+          ><app-icon name="whatsapp" /> WhatsApp us</a
+        >
+      </div>
+      <div class="hero-trust">
+        <div class="avatars">
+          <span style="background: var(--theme-primary)">A</span
+          ><span style="background: var(--theme-cat-fridge)">S</span
+          ><span style="background: var(--theme-cat-washer)">R</span
+          ><span style="background: var(--theme-black-4)">+</span>
+        </div>
+        <div>
+          <span class="stars">★★★★★</span>
+          <small>Upfront pricing · Pay after service</small>
+        </div>
+      </div>
+    </div>
+    <app-hero-art />
+  </div>
+</section>
+
+<!-- QUICK BOOK BAR -->
+<div class="container quick-wrap">
+  <div class="quick-bar" reveal>
+    <div>
+      <h3>What needs fixing?</h3>
+      <p>Choose an appliance to see slots</p>
+    </div>
+    <div class="quick-cats">
+      @for (c of categories; track c.key) {
+        <a class="quick-cat" [routerLink]="['/book']" [queryParams]="{ category: c.key }">
+          <span class="cat-icon sm" [attr.data-cat]="c.key"
+            ><app-icon [name]="c.key" [size]="22"
+          /></span>
+          <span
+            >{{ c.label }}<small>{{ c.sub }}</small></span
+          >
+          <span class="go"><app-icon name="chevronR" [size]="16" /></span>
+        </a>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- STATS -->
+<section class="stats-strip">
+  <div class="container stats-row">
+    @for (s of stats; track s.label; let i = $index) {
+      <div class="stat-pill" reveal [revealDelay]="i * 80">
+        <b [countUp]="s.value"></b><span>{{ s.label }}</span>
+      </div>
+    }
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section id="services" class="section">
+  <div class="container">
+    <div class="section-head" reveal>
+      <span class="eyebrow">Our services</span>
+      <h2>Everything your appliances need, <span class="grad-text">at your doorstep</span></h2>
+      <p class="muted">
+        Transparent starting prices. The technician confirms the final quote before any work begins.
+      </p>
+    </div>
+
+    <div class="svc-tabs" reveal>
+      <button class="svc-tab" [class.active]="tab() === 'ALL'" (click)="tab.set('ALL')">
+        <span class="cat-icon"><app-icon name="grid" [size]="16" /></span> All services
+      </button>
+      @for (c of categories; track c.key) {
+        <button class="svc-tab" [class.active]="tab() === c.key" (click)="tab.set(c.key)">
+          <span class="cat-icon" [attr.data-cat]="c.key"
+            ><app-icon [name]="c.key" [size]="18"
+          /></span>
+          {{ c.label }}
+        </button>
+      }
+    </div>
+
+    <div class="card-grid">
+      @for (s of visibleServices(); track s.id; let i = $index) {
+        <div class="svc-card" reveal [revealDelay]="(i % 4) * 70">
+          @if (i === 0 && tab() === 'ALL') {
+            <span class="svc-badge">Most booked</span>
+          }
+          <app-appliance-anim [category]="s.category" />
+          <h4>{{ s.name }}</h4>
+          <div class="svc-meta">
+            <span><app-icon name="clock" [size]="14" /> ~{{ s.durationMin }} min</span>
+            <span><app-icon name="shield" [size]="14" /> Warranty</span>
+          </div>
+          <p>{{ s.description }}</p>
+          <div class="svc-foot">
+            <span class="price"
+              >from <b>₹{{ s.price | number }}</b></span
+            >
+            <a
+              class="btn btn-primary btn-sm"
+              [routerLink]="['/book']"
+              [queryParams]="{ service: s.id }"
+              >Book <app-icon name="chevronR" [size]="14"
+            /></a>
+          </div>
+        </div>
+      } @empty {
+        @if (site.loaded()) {
+          <p class="muted center">Services will be listed here soon. Please WhatsApp us to book.</p>
+        } @else {
+          @for (i of [1, 2, 3, 4]; track i) {
+            <div class="svc-card skeleton"></div>
+          }
+        }
+      }
+    </div>
+  </div>
+</section>
+
+<!-- BRANDS -->
+<section class="brands">
+  <p>We service all major brands</p>
+  <div class="marquee">
+    @for (b of brandsLoop; track $index) {
+      <span>{{ b }}</span>
+    }
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how" class="section alt">
+  <div class="container">
+    <div class="section-head" reveal>
+      <span class="eyebrow">How it works</span>
+      <h2>Booked in 60 seconds, fixed at your door</h2>
+    </div>
+    <div class="steps">
+      <div class="steps-progress">
+        <span [style.width.%]="(activeStep() / (steps.length - 1)) * 100"></span>
+      </div>
+      @for (st of steps; track st.title; let i = $index) {
+        <div
+          class="step"
+          reveal
+          [revealDelay]="i * 120"
+          [class.active]="activeStep() === i"
+          [class.passed]="activeStep() > i"
+          (mouseenter)="activeStep.set(i)"
+        >
+          <div class="step-icon">
+            <app-icon [name]="st.icon" [size]="30" /><span class="step-num">{{ i + 1 }}</span>
+          </div>
+          <h4>{{ st.title }}</h4>
+          <p>{{ st.text }}</p>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- LIVE WHATSAPP DEMO -->
+<section class="section wa-section">
+  <div class="container wa-split">
+    <div reveal>
+      <span class="eyebrow light">Live WhatsApp updates</span>
+      <h2>Stay informed at every step — right on WhatsApp</h2>
+      <p class="wa-lead">
+        No apps to install, no calls to chase. From booking to feedback, you get a message the
+        moment something happens.
+      </p>
+      <ul class="wa-features">
+        @for (f of waFeatures; track f.title; let i = $index) {
+          <li reveal [revealDelay]="i * 90">
+            <span class="wf-icon"><app-icon [name]="f.icon" [size]="18" /></span>
+            <span
+              ><b>{{ f.title }}</b
+              ><small>{{ f.text }}</small></span
+            >
+          </li>
+        }
+      </ul>
+      <a routerLink="/book" class="btn btn-accent btn-lg"
+        ><app-icon name="calendar" /> Book & try it</a
+      >
+    </div>
+    <div class="wa-phone-wrap" reveal [revealDelay]="150">
+      <div class="phone-glow"></div>
+      <app-wa-demo [businessName]="site.businessName()" />
+    </div>
+  </div>
+</section>
+
+<!-- WHY US -->
+<section class="section tint">
+  <div class="container why-split">
+    <div class="why-panel" reveal>
+      <span class="eyebrow light">Our promise</span>
+      <h3>Service you can trust, every single visit</h3>
+      <p>
+        Trained technicians, genuine spare parts and a warranty on every repair — with no payment
+        until you're happy.
+      </p>
+      <div class="big"><span [countUp]="'30'"></span><small>day service warranty</small></div>
+      <div class="guarantee">
+        <span><app-icon name="rupee" [size]="16" /> Pay after service</span>
+        <span><app-icon name="shield" [size]="16" /> Verified experts</span>
+        <span><app-icon name="whatsapp" [size]="16" /> Live updates</span>
+      </div>
+    </div>
+    <div class="why-grid">
+      @for (w of whys; track w.title; let i = $index) {
+        <div class="why" reveal [revealDelay]="i * 90">
+          <span class="why-icon"><app-icon [name]="w.icon" [size]="22" /></span>
+          <h4>{{ w.title }}</h4>
+          <p>{{ w.text }}</p>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- REVIEWS -->
+<section class="section">
+  <div class="container">
+    <div class="section-head" reveal>
+      <span class="eyebrow">Reviews</span>
+      <h2>Loved by homes across the city</h2>
+    </div>
+    <div class="reviews">
+      @for (r of reviews; track $index; let i = $index) {
+        <div class="review" reveal [revealDelay]="i * 100">
+          <span class="stars">★★★★★</span>
+          <p>{{ r.text }}</p>
+          <div class="review-by">
+            <span class="av" [style.background]="r.color">{{ r.name.charAt(0) }}</span>
+            <span
+              ><b>{{ r.name }}</b
+              ><small>{{ r.area }}</small></span
+            >
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" class="section alt">
+  <div class="container">
+    <div class="section-head" reveal>
+      <span class="eyebrow">FAQs</span>
+      <h2>Questions? We've got answers</h2>
+    </div>
+    <div class="faq" reveal>
+      @for (f of faqs; track f.q; let first = $first) {
+        <details [open]="first">
+          <summary>{{ f.q }}</summary>
+          <p>{{ f.a }}</p>
+        </details>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-band section alt" style="padding-top: 0">
+  <div class="container">
+    <div class="cta-box" reveal>
+      <div>
+        <h2>Appliance acting up? Let's fix it today.</h2>
+        <p>Choose a slot in under a minute — pay only after the job is done.</p>
+      </div>
+      <div class="hero-cta">
+        <a routerLink="/book" class="btn btn-accent btn-lg"
+          ><app-icon name="calendar" /> Book now</a
+        >
+        <a [href]="site.whatsappLink()" target="_blank" rel="noopener" class="btn btn-glass btn-lg"
+          ><app-icon name="whatsapp" /> Chat with us</a
+        >
+      </div>
+    </div>
+  </div>
+</section>

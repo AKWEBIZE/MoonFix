@@ -1,0 +1,61 @@
+<section class="page-banner">
+  <div class="container narrow">
+    <h1>Login</h1>
+    <p>See all your bookings, track visits and book again faster.</p>
+  </div>
+</section>
+
+<section class="page-body">
+  <div class="container login-wrap">
+    <div class="card elevated login-card">
+      <div class="login-head">
+        <span class="login-mark"><app-icon name="user" [size]="22" /></span>
+        <div>
+          <h2>Welcome to {{ site.businessName() }}</h2>
+          <p class="muted">Log in with Google or your WhatsApp number.</p>
+        </div>
+      </div>
+
+      @if (site.config(); as cfg) {
+        @if (cfg.googleClientId) {
+          <div class="google-box" [class.busy]="googleBusy()">
+            <app-google-button [clientId]="cfg.googleClientId" (credential)="onGoogle($event)" />
+            @if (googleBusy()) {
+              <p class="muted small center">Signing you in…</p>
+            }
+            @if (googleError()) {
+              <p class="error center">{{ googleError() }}</p>
+            }
+          </div>
+        }
+
+        @if (cfg.otpMode !== 'off') {
+          @if (cfg.googleClientId) {
+            <div class="or"><span>or use WhatsApp</span></div>
+          }
+          <app-wa-otp purpose="login" (verified)="done($event)" />
+        }
+
+        @if (!cfg.googleClientId && cfg.otpMode === 'off') {
+          <div class="notice warn">
+            Online login is not available yet. You can still
+            <a routerLink="/track">track a booking</a> with your Booking ID.
+          </div>
+        }
+      } @else {
+        <p class="muted center">Loading…</p>
+      }
+
+      <p class="fine">
+        New here? Logging in creates your account. Your bookings are matched by your mobile number.
+      </p>
+    </div>
+
+    <ul class="perks">
+      <li><app-icon name="list" [size]="18" /> All your bookings in one place</li>
+      <li><app-icon name="clock" [size]="18" /> Live status of upcoming visits</li>
+      <li><app-icon name="calendar" [size]="18" /> Book again in a few taps</li>
+      <li><app-icon name="shield" [size]="18" /> No password to remember</li>
+    </ul>
+  </div>
+</section>

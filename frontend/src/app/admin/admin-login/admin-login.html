@@ -1,0 +1,26 @@
+<div class="login-page">
+  <form class="card login-card" (ngSubmit)="submit()">
+    <div class="login-icon"><app-icon name="shield" [size]="30" /></div>
+    <h2>Staff sign in</h2>
+    <label class="field">
+      <span>Username</span>
+      <input name="u" [(ngModel)]="username" required autocomplete="username" autofocus />
+    </label>
+    <label class="field">
+      <span>Password</span>
+      <input
+        name="p"
+        type="password"
+        [(ngModel)]="password"
+        required
+        autocomplete="current-password"
+      />
+    </label>
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+    <button class="btn btn-primary btn-block" [disabled]="loading() || !username || !password">
+      {{ loading() ? 'Signing in…' : 'Sign in' }}
+    </button>
+  </form>
+</div>

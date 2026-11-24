@@ -1,0 +1,129 @@
+.track-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// Status badge with a blinking "live" dot
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: led 1.4s ease-in-out infinite;
+}
+
+// Progress timeline
+.timeline {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+}
+.timeline li {
+  flex: 1;
+  position: relative;
+  padding-top: 28px;
+  font-size: 0.8rem;
+  color: var(--theme-muted);
+  text-align: center;
+}
+.timeline li span {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--theme-gray-200);
+  border: 3px solid var(--theme-white);
+  box-shadow: 0 0 0 1px var(--theme-gray-200);
+  z-index: 1;
+}
+.timeline li::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: -50%;
+  width: 100%;
+  height: 3px;
+  background: var(--theme-gray-200);
+  transition: background 0.4s;
+}
+.timeline li:first-child::before {
+  display: none;
+}
+.timeline li.done {
+  color: var(--theme-success);
+  font-weight: 600;
+  animation: staggerIn 0.4s ease both;
+  animation-delay: calc(var(--i, 0) * 180ms);
+}
+.timeline li.done span {
+  background: var(--theme-success);
+  box-shadow: 0 0 0 1px var(--theme-success);
+}
+.timeline li.done::before {
+  background: var(--theme-success);
+}
+.timeline li.current span {
+  animation: currentPulse 1.8s ease-out infinite;
+}
+@keyframes currentPulse {
+  0% {
+    box-shadow:
+      0 0 0 1px var(--theme-success),
+      0 0 0 0 rgba(var(--theme-success-rgb), 0.45);
+  }
+  100% {
+    box-shadow:
+      0 0 0 1px var(--theme-success),
+      0 0 0 12px rgba(var(--theme-success-rgb), 0);
+  }
+}
+
+// Van driving to the house while the job is in progress
+.track-road {
+  position: relative;
+  height: 3px;
+  margin: 26px 8px 4px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--theme-primary-100) 0 10px,
+    transparent 10px 18px
+  );
+}
+.ns-van {
+  position: absolute;
+  top: -12px;
+  width: 28px;
+  height: 22px;
+  border-radius: 7px;
+  background: var(--theme-gradient-accent);
+  color: var(--theme-white);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 14px rgba(var(--theme-accent-rgb), 0.45);
+  animation: roadDrive 4s linear infinite;
+}
+.track-home {
+  position: absolute;
+  right: -6px;
+  top: -14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--theme-success);
+  color: var(--theme-white);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

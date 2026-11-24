@@ -1,0 +1,31 @@
+<div class="phone" aria-hidden="true">
+  <div class="phone-notch"></div>
+  <div class="wa-top">
+    <span class="wa-av"><app-icon name="AC" [size]="18" /></span>
+    <span class="wa-name"
+      ><b>{{ businessName() }}</b
+      ><small>{{ typing() ? 'typing…' : 'online' }}</small></span
+    >
+    <app-icon name="phone" [size]="18" />
+  </div>
+  <div class="wa-body">
+    <div class="wa-day">Today</div>
+    @for (m of shown(); track $index) {
+      <div class="bubble" [class.me]="m.from === 'me'">
+        <span class="bubble-text">{{ m.text }}</span>
+        <span class="bubble-time"
+          >{{ m.time }}
+          @if (m.from === 'me') {
+            <span class="ticks">✓✓</span>
+          }
+        </span>
+      </div>
+    }
+    @if (typing()) {
+      <div class="bubble typing"><i></i><i></i><i></i></div>
+    }
+  </div>
+  <div class="wa-input">
+    <span>Message</span><span class="wa-send"><app-icon name="send" [size]="16" /></span>
+  </div>
+</div>

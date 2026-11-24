@@ -1,0 +1,102 @@
+// Reset, typography and small utility classes.
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 90px;
+}
+body {
+  margin: 0;
+  font-family: var(--theme-font);
+  color: var(--theme-text);
+  background: var(--theme-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--theme-font-display);
+  line-height: 1.2;
+  margin: 0 0 0.5em;
+  letter-spacing: -0.015em;
+}
+p {
+  margin: 0 0 1em;
+}
+a {
+  color: var(--theme-primary);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+img {
+  max-width: 100%;
+}
+code {
+  background: var(--theme-gray-100);
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 0.9em;
+}
+pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  margin: 6px 0;
+  font-size: 0.9rem;
+  color: var(--theme-text-2);
+}
+input,
+select,
+textarea,
+button {
+  font: inherit;
+  color: inherit;
+}
+::selection {
+  background: var(--theme-primary-100);
+}
+
+.container {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+.container.narrow {
+  max-width: 820px;
+}
+.muted {
+  color: var(--theme-muted);
+}
+.muted-light {
+  color: var(--theme-on-dark-muted);
+}
+.small,
+small {
+  font-size: 0.85rem;
+}
+.center {
+  text-align: center;
+}
+.mt {
+  margin-top: 20px;
+}
+.error {
+  color: var(--theme-danger);
+  font-size: 0.92rem;
+  margin: 8px 0;
+}
+.dim {
+  opacity: 0.55;
+}
+.grad-text {
+  background: var(--theme-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}

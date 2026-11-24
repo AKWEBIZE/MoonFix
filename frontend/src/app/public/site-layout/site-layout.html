@@ -1,0 +1,98 @@
+<div class="announce">
+  <div class="container">
+    <span class="tag-new">NEW</span>
+    <span>Book online & get <b>same-day doorstep service</b> with live WhatsApp updates.</span>
+    <a routerLink="/book">Book now →</a>
+  </div>
+</div>
+
+<header class="site-header" [class.scrolled]="scrolled()">
+  <div class="container header-row">
+    <a routerLink="/" class="brand" (click)="menu.set(false)">
+      <span class="brand-mark"><app-icon name="AC" [size]="22" /></span>
+      <span>{{ site.businessName() }}<small>AC · Fridge · Washing Machine</small></span>
+    </a>
+    <button class="icon-btn menu-btn" (click)="menu.set(!menu())" aria-label="Menu">
+      <app-icon [name]="menu() ? 'x' : 'menu'" />
+    </button>
+    <nav class="site-nav" [class.open]="menu()" (click)="menu.set(false)">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
+        >Home</a
+      >
+      <a routerLink="/" fragment="services">Services</a>
+      <a routerLink="/" fragment="how">How it works</a>
+      <a routerLink="/track" routerLinkActive="active">Track booking</a>
+      @if (account.loggedIn()) {
+        <a routerLink="/account" routerLinkActive="active" class="nav-account" title="My orders"
+          ><app-icon name="user" [size]="16" /><span class="nav-label">My orders</span></a
+        >
+      } @else {
+        <a routerLink="/login" routerLinkActive="active" class="nav-account" title="Login"
+          ><app-icon name="user" [size]="16" /><span class="nav-label">Login</span></a
+        >
+      }
+      @if (site.phoneDisplay()) {
+        <a class="nav-call" [href]="site.whatsappLink()" target="_blank" rel="noopener"
+          ><app-icon name="phone" [size]="16" /> {{ site.phoneDisplay() }}</a
+        >
+      }
+      <a routerLink="/book" class="btn btn-primary btn-sm"
+        ><app-icon name="calendar" [size]="16" /> Book now</a
+      >
+    </nav>
+  </div>
+</header>
+
+<main><router-outlet /></main>
+
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div>
+      <div class="brand light">
+        <span class="brand-mark"><app-icon name="AC" [size]="22" /></span
+        ><span>{{ site.businessName() }}<small>AC · Fridge · Washing Machine</small></span>
+      </div>
+      <p class="muted-light">
+        Trusted doorstep repair & servicing for air conditioners, refrigerators and washing
+        machines. Trained technicians, upfront pricing and WhatsApp updates at every step.
+      </p>
+    </div>
+    <div>
+      <h4>Services</h4>
+      <a routerLink="/book" [queryParams]="{ category: 'AC' }">AC service & repair</a>
+      <a routerLink="/book" [queryParams]="{ category: 'FRIDGE' }">Refrigerator repair</a>
+      <a routerLink="/book" [queryParams]="{ category: 'WASHING_MACHINE' }"
+        >Washing machine repair</a
+      >
+    </div>
+    <div>
+      <h4>Quick links</h4>
+      <a routerLink="/" fragment="how">How it works</a>
+      <a routerLink="/" fragment="faq">FAQs</a>
+      <a routerLink="/track">Track your booking</a>
+      <a [routerLink]="account.loggedIn() ? '/account' : '/login'">My orders</a>
+    </div>
+    <div class="footer-cta">
+      <h4>Need help right now?</h4>
+      <p>Chat with us on WhatsApp — we usually reply within minutes.</p>
+      <a class="btn btn-wa btn-sm" [href]="site.whatsappLink()" target="_blank" rel="noopener"
+        ><app-icon name="whatsapp" [size]="16" /> {{ site.phoneDisplay() || 'Chat on WhatsApp' }}</a
+      >
+    </div>
+  </div>
+  <div class="container copyright">
+    <span>© {{ year }} {{ site.businessName() }}. All rights reserved.</span>
+    <span>Doorstep service · Pay after the job is done</span>
+  </div>
+</footer>
+
+<a
+  class="wa-float"
+  [href]="site.whatsappLink()"
+  target="_blank"
+  rel="noopener"
+  aria-label="Chat on WhatsApp"
+>
+  <span class="wa-tip">Chat with us</span>
+  <app-icon name="whatsapp" [size]="30" />
+</a>

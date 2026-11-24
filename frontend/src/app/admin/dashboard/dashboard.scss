@@ -1,0 +1,139 @@
+@use 'breakpoints' as bp;
+
+// ---------- Stat cards ----------
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.stat {
+  position: relative;
+  overflow: hidden;
+  background: var(--theme-white);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--theme-radius);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--theme-shadow-sm);
+}
+.stat::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--theme-gradient);
+}
+.stat b {
+  font-family: var(--theme-font-display);
+  font-size: 2rem;
+  line-height: 1.2;
+}
+.stat small {
+  color: var(--theme-muted);
+  font-weight: 600;
+}
+.stat span {
+  color: var(--theme-muted);
+  font-size: 0.82rem;
+}
+.stat.warn::before {
+  background: var(--theme-gradient-accent);
+}
+.stat.warn b {
+  color: var(--theme-warning);
+}
+.stat.danger::before {
+  background: var(--theme-danger);
+}
+.stat.danger b {
+  color: var(--theme-danger);
+}
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 18px;
+}
+
+// ---------- Today's jobs ----------
+.job-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 120px auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--theme-border);
+  color: var(--theme-text);
+  text-decoration: none !important;
+  border-radius: 10px;
+}
+.job-row:hover {
+  background: var(--theme-primary-50);
+}
+.job-main {
+  display: flex;
+  flex-direction: column;
+}
+.job-main small {
+  color: var(--theme-muted);
+}
+.job-time {
+  font-weight: 700;
+  color: var(--theme-primary);
+  font-size: 0.9rem;
+}
+.job-tech {
+  font-size: 0.88rem;
+  color: var(--theme-text-2);
+}
+
+// ---------- Next 7 days bar chart ----------
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  height: 190px;
+  padding-top: 20px;
+}
+.bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 4px;
+}
+.bar {
+  width: 100%;
+  max-width: 34px;
+  min-height: 4px;
+  background: var(--theme-gradient);
+  border-radius: 8px 8px 3px 3px;
+}
+.bar-val {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.bar-col small {
+  color: var(--theme-muted);
+  font-size: 0.75rem;
+}
+
+@include bp.down(bp.$tablet) {
+  .dash-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@include bp.down(bp.$mobile) {
+  .job-row {
+    grid-template-columns: 70px 1fr auto;
+  }
+  .job-tech {
+    display: none;
+  }
+}

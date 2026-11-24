@@ -1,0 +1,316 @@
+@use 'breakpoints' as bp;
+
+:host {
+  display: block;
+}
+
+.hero-art {
+  position: relative;
+  height: 480px;
+}
+.stage {
+  position: absolute;
+  inset: 20px 30px;
+  border-radius: 32px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+.stage svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+// ---------- Animated scene ----------
+.airflow path {
+  stroke-dasharray: 8 10;
+  animation: flow 1.8s linear infinite;
+}
+.drum {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: spin 3s linear infinite;
+}
+.led {
+  animation: led 1.6s ease-in-out infinite;
+}
+.ac-flap {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: flap 3.2s ease-in-out infinite;
+}
+@keyframes flap {
+  50% {
+    transform: scaleY(1.8) translateY(1px);
+  }
+}
+.snow circle {
+  animation: snow 3.6s linear infinite;
+  opacity: 0;
+}
+.snow circle:nth-child(2) {
+  animation-delay: -0.8s;
+}
+.snow circle:nth-child(3) {
+  animation-delay: -1.6s;
+}
+.snow circle:nth-child(4) {
+  animation-delay: -2.4s;
+}
+.snow circle:nth-child(5) {
+  animation-delay: -3s;
+}
+@keyframes snow {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(70px) translateX(6px);
+    opacity: 0;
+  }
+}
+.fridge-door {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: door 7s ease-in-out infinite;
+}
+@keyframes door {
+  0%,
+  80%,
+  100% {
+    transform: none;
+  }
+  86%,
+  92% {
+    transform: perspective(200px) rotateY(-28deg);
+  }
+}
+.blink-a {
+  animation: led 1.2s steps(2) infinite;
+}
+.blink-b {
+  animation: led 1.2s steps(2) infinite -0.6s;
+}
+.wash-progress {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: wash 6s linear infinite;
+}
+@keyframes wash {
+  from {
+    transform: scaleX(0.05);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.water {
+  animation: water 2.4s ease-in-out infinite;
+}
+@keyframes water {
+  50% {
+    transform: translateX(-10px) translateY(2px);
+  }
+}
+.bubbles circle {
+  animation: bubble 2.4s ease-in infinite;
+}
+.bubbles circle:nth-child(2) {
+  animation-delay: -0.8s;
+}
+.bubbles circle:nth-child(3) {
+  animation-delay: -1.6s;
+}
+@keyframes bubble {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-46px);
+    opacity: 0;
+  }
+}
+.van {
+  animation: drive 9s linear infinite;
+}
+@keyframes drive {
+  0% {
+    transform: translateX(-80px);
+  }
+  100% {
+    transform: translateX(460px);
+  }
+}
+.twinkle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: twinkle 2.6s ease-in-out infinite;
+}
+.twinkle.t2 {
+  animation-delay: -0.9s;
+}
+.twinkle.t3 {
+  animation-delay: -1.7s;
+}
+
+// ---------- Floating status cards ----------
+.float-card {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--theme-white);
+  color: var(--theme-text);
+  padding: 12px 14px;
+  border-radius: 14px;
+  box-shadow: var(--theme-shadow-lg);
+  font-size: 0.85rem;
+  animation: bob 5s ease-in-out infinite;
+  z-index: 2;
+}
+.float-card b {
+  display: block;
+  font-size: 0.9rem;
+}
+.float-card small {
+  color: var(--theme-muted);
+  font-size: 0.76rem;
+}
+.float-card .fc-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.fc-1 {
+  top: 0;
+  left: 0;
+}
+.fc-2 {
+  right: 0;
+  top: 42%;
+  animation-delay: -1.6s;
+}
+.fc-2 .fc-icon {
+  background: var(--theme-accent-soft);
+  color: var(--theme-accent);
+}
+.fc-3 {
+  left: 10px;
+  bottom: 0;
+  animation-delay: -3.2s;
+  padding-right: 34px;
+}
+.fc-3 .fc-icon {
+  background: var(--theme-success-soft);
+  color: var(--theme-whatsapp-dark);
+}
+
+.live-card {
+  min-width: 250px;
+}
+.live-card[data-tone='ok'] .fc-icon {
+  background: var(--theme-success-soft);
+  color: var(--theme-success);
+}
+.live-card[data-tone='brand'] .fc-icon {
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary);
+}
+.live-card[data-tone='accent'] .fc-icon {
+  background: var(--theme-accent-soft);
+  color: var(--theme-accent);
+}
+.live-card[data-tone='violet'] .fc-icon {
+  background: var(--theme-gray-100);
+  color: var(--theme-black-3);
+}
+.journey-dots {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+.journey-dots i {
+  width: 22px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--theme-gray-200);
+  transition: background 0.4s;
+}
+.journey-dots i.on {
+  background: var(--theme-gradient);
+}
+.eta {
+  color: var(--theme-accent);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.wa-count {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  background: var(--theme-whatsapp);
+  color: var(--theme-white);
+  font-size: 0.72rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(var(--theme-whatsapp-rgb), 0.5);
+  animation: pulseBadge 3.2s ease-in-out infinite;
+}
+@keyframes pulseBadge {
+  0%,
+  85%,
+  100% {
+    transform: scale(1);
+  }
+  90% {
+    transform: scale(1.25);
+  }
+}
+
+// ---------- Responsive ----------
+@include bp.down(bp.$tablet) {
+  .hero-art {
+    height: 400px;
+    max-width: 520px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}
+@include bp.down(bp.$mobile) {
+  .hero-art {
+    height: 340px;
+  }
+  .float-card {
+    font-size: 0.78rem;
+    padding: 9px 11px;
+  }
+  .float-card .fc-icon {
+    width: 30px;
+    height: 30px;
+  }
+  .live-card {
+    min-width: 0;
+  }
+}

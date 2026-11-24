@@ -1,0 +1,56 @@
+// Size and shape can be changed by the parent with CSS variables, e.g.
+//   .cat-tab app-appliance-anim { --appl-size: 60px; }
+:host {
+  display: inline-flex;
+  border-radius: var(--appl-radius, 18px);
+}
+
+.appl-anim {
+  display: inline-flex;
+  width: var(--appl-size, 64px);
+  height: var(--appl-size, 64px);
+  border-radius: var(--appl-radius, 18px);
+  background: var(--theme-cat-ac-bg);
+}
+.appl-anim[data-cat='FRIDGE'] {
+  background: var(--theme-cat-fridge-bg);
+}
+.appl-anim[data-cat='WASHING_MACHINE'] {
+  background: var(--theme-cat-washer-bg);
+}
+.appl-anim svg {
+  width: 100%;
+  height: 100%;
+}
+
+.led {
+  animation: led 1.6s ease-in-out infinite;
+}
+.airflow path {
+  stroke-dasharray: 4 5;
+  animation: flow 1.4s linear infinite;
+}
+.frost path {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: twinkle 2.2s ease-in-out infinite;
+}
+.frost .f2 {
+  animation-delay: -0.7s;
+}
+.frost .f3 {
+  animation-delay: -1.4s;
+}
+.drum {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: spin 2.4s linear infinite;
+}
+
+// Speed up when the surrounding service card is hovered
+:host-context(.svc-card:hover) .drum {
+  animation-duration: 0.8s;
+}
+:host-context(.svc-card:hover) .airflow path {
+  animation-duration: 0.7s;
+}

@@ -1,0 +1,88 @@
+<div class="page-head"><h1>Time slots & working days</h1></div>
+
+<div class="two-col">
+  <div class="card">
+    <h3>Daily time slots</h3>
+    <p class="muted small">
+      Customers choose one of these slots. Each technician takes one job per slot.
+    </p>
+    <ul class="simple-list">
+      @for (s of slots(); track s.id) {
+        <li [class.dim]="!s.active">
+          @if (editId() === s.id) {
+            <span class="inline-form">
+              <input type="time" [(ngModel)]="draft.start" /> –
+              <input type="time" [(ngModel)]="draft.end" />
+              <label class="check"
+                ><input type="checkbox" [(ngModel)]="draft.active" /> Active</label
+              >
+            </span>
+            <span class="row-btns">
+              <button class="btn btn-xs btn-primary" (click)="save()">Save</button>
+              <button class="btn btn-xs btn-ghost" (click)="editId.set(null)">Cancel</button>
+            </span>
+          } @else {
+            <span
+              ><b>{{ s.start | time12 }} – {{ s.end | time12 }}</b>
+              @if (!s.active) {
+                <small class="muted">(inactive)</small>
+              }
+            </span>
+            <span class="row-btns">
+              <button class="icon-btn sm" (click)="startEdit(s)" aria-label="Edit">
+                <app-icon name="edit" [size]="16" />
+              </button>
+              <button class="icon-btn sm" (click)="remove(s)" aria-label="Delete">
+                <app-icon name="trash" [size]="16" />
+              </button>
+            </span>
+          }
+        </li>
+      }
+    </ul>
+    <div class="inline-form mt">
+      <input type="time" [(ngModel)]="newSlot.start" /> –
+      <input type="time" [(ngModel)]="newSlot.end" />
+      <button class="btn btn-primary btn-sm" (click)="add()">
+        <app-icon name="plus" [size]="16" /> Add slot
+      </button>
+    </div>
+  </div>
+
+  @if (settings(); as st) {
+    <div class="card">
+      <h3>Working days & booking rules</h3>
+      <div class="field">
+        <span>Open for bookings on</span>
+        <div class="chips">
+          @for (d of weekdays; track $index) {
+            <label class="chip" [class.on]="days.includes($index)"
+              ><input
+                type="checkbox"
+                [checked]="days.includes($index)"
+                (change)="toggleDay($index)"
+              />
+              {{ d }}</label
+            >
+          }
+        </div>
+      </div>
+      <div class="form-grid mt">
+        <label class="field"
+          ><span>Customers can book up to (days ahead)</span
+          ><input type="number" min="1" max="180" [(ngModel)]="st.booking_window_days"
+        /></label>
+        <label class="field"
+          ><span>Minimum notice before a slot (minutes)</span
+          ><input type="number" min="0" step="15" [(ngModel)]="st.min_lead_minutes"
+        /></label>
+      </div>
+      <div class="actions-end">
+        <button class="btn btn-primary" (click)="saveRules(st)">Save rules</button>
+      </div>
+      <p class="muted small">
+        Specific holidays and technician leave are managed in <b>Availability</b>.
+      </p>
+    </div>
+  }
+</div>

@@ -1,0 +1,41 @@
+<div class="admin-shell" [class.nav-open]="navOpen()">
+  <aside class="admin-side" (click)="navOpen.set(false)">
+    <div class="admin-brand"><app-icon name="tool" [size]="22" /> Admin panel</div>
+    <nav>
+      @for (l of links; track l.path) {
+        <a [routerLink]="l.path" routerLinkActive="active"
+          ><app-icon [name]="l.icon" [size]="18" /> {{ l.label }}</a
+        >
+      }
+    </nav>
+    <div class="admin-side-foot">
+      <div class="muted-light small">
+        Signed in as <b>{{ auth.username() }}</b>
+      </div>
+      <button class="btn btn-ghost-light btn-sm" (click)="auth.logout()">
+        <app-icon name="logout" [size]="16" /> Sign out
+      </button>
+    </div>
+  </aside>
+  <div class="admin-main">
+    <header class="admin-top">
+      <button class="icon-btn admin-menu" (click)="navOpen.set(!navOpen())" aria-label="Menu">
+        <app-icon name="menu" />
+      </button>
+      <a href="/" target="_blank" class="small">View website ↗</a>
+    </header>
+    <div class="admin-content">
+      @if (defaultPassword()) {
+        <div class="security-alert" role="alert">
+          <app-icon name="shield" [size]="20" />
+          <span>
+            <b>You are still using the default admin password.</b> Anyone who has seen the setup
+            guide can log in. Change it now — a live server will refuse to start until you do.
+          </span>
+          <a class="btn btn-sm btn-danger-outline" routerLink="settings">Change password</a>
+        </div>
+      }
+      <router-outlet />
+    </div>
+  </div>
+</div>

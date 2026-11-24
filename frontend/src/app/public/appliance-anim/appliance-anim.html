@@ -1,0 +1,58 @@
+<span class="appl-anim" [attr.data-cat]="category()" aria-hidden="true">
+  @switch (category()) {
+    @case ('AC') {
+      <svg viewBox="0 0 64 64">
+        <rect x="8" y="14" width="48" height="16" rx="5" fill="#fff" />
+        <rect x="8" y="25" width="48" height="5" rx="2.5" style="fill: var(--theme-primary-200)" />
+        <circle class="led" cx="49" cy="20" r="2" style="fill: var(--theme-success-light)" />
+        <g
+          class="airflow"
+          fill="none"
+          style="stroke: var(--theme-primary-light)"
+          stroke-width="2.4"
+          stroke-linecap="round"
+        >
+          <path d="M18 34 C 21 40, 15 44, 18 52" />
+          <path d="M32 34 C 35 40, 29 44, 32 54" />
+          <path d="M46 34 C 49 40, 43 44, 46 52" />
+        </g>
+      </svg>
+    }
+    @case ('FRIDGE') {
+      <svg viewBox="0 0 64 64">
+        <rect x="18" y="8" width="28" height="48" rx="5" fill="#fff" />
+        <rect x="18" y="24" width="28" height="2" style="fill: var(--theme-primary-200)" />
+        <rect x="40" y="13" width="2.4" height="7" rx="1.2" style="fill: var(--theme-cat-fridge)" />
+        <rect
+          x="40"
+          y="30"
+          width="2.4"
+          height="11"
+          rx="1.2"
+          style="fill: var(--theme-cat-fridge)"
+        />
+        <g class="frost" style="fill: var(--theme-cat-fridge)">
+          <path d="M10 18 l1.5 3 3 1.5 -3 1.5 -1.5 3 -1.5 -3 -3 -1.5 3 -1.5z" />
+          <path
+            class="f2"
+            d="M54 34 l1.2 2.4 2.4 1.2 -2.4 1.2 -1.2 2.4 -1.2 -2.4 -2.4 -1.2 2.4 -1.2z"
+          />
+          <path class="f3" d="M12 44 l1 2 2 1 -2 1 -1 2 -1 -2 -2 -1 2 -1z" />
+        </g>
+      </svg>
+    }
+    @default {
+      <svg viewBox="0 0 64 64">
+        <rect x="12" y="8" width="40" height="48" rx="6" fill="#fff" />
+        <rect x="12" y="8" width="40" height="10" rx="5" style="fill: var(--theme-gray-200)" />
+        <circle cx="19" cy="13" r="1.8" style="fill: var(--theme-cat-washer)" />
+        <circle cx="32" cy="37" r="13" style="fill: var(--theme-gray-200)" />
+        <circle cx="32" cy="37" r="10" style="fill: var(--theme-black-4)" />
+        <g class="drum">
+          <path d="M25 39 Q 32 30 39 39 Q 32 44 25 39 Z" fill="#fff" opacity="0.6" />
+          <circle cx="36" cy="32" r="1.8" fill="#fff" opacity="0.8" />
+        </g>
+      </svg>
+    }
+  }
+</span>

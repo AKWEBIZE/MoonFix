@@ -1,0 +1,164 @@
+@use 'breakpoints' as bp;
+
+// Building blocks shared by the admin pages.
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.page-head h1 {
+  font-size: 1.65rem;
+  margin: 0;
+  font-weight: 800;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+.filters input[type='date'],
+.filters select {
+  width: auto;
+}
+.filters .grow {
+  flex: 1;
+  min-width: 200px;
+}
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--theme-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--theme-white);
+  padding: 3px;
+  gap: 3px;
+}
+.seg button {
+  border: none;
+  background: none;
+  padding: 7px 14px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--theme-text-2);
+  border-radius: 9px;
+}
+.seg button.active {
+  background: var(--theme-black);
+  color: var(--theme-white);
+}
+
+.table-card {
+  padding: 0;
+  overflow-x: auto;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+.table th {
+  text-align: left;
+  padding: 13px 16px;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--theme-muted);
+  background: var(--theme-gray-50);
+  border-bottom: 1px solid var(--theme-border);
+}
+.table td {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--theme-border);
+  vertical-align: middle;
+}
+.table tbody tr {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.table tbody tr:hover {
+  background: var(--theme-primary-50);
+}
+.table tr.row-active {
+  background: var(--theme-primary-soft) !important;
+}
+.table td small {
+  color: var(--theme-muted);
+}
+.row-btns {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+.simple-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.simple-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--theme-border);
+  font-size: 0.92rem;
+}
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.inline-form input[type='time'] {
+  width: 130px;
+}
+.code-box {
+  display: block;
+  padding: 10px 12px;
+  margin: 8px 0 12px;
+  word-break: break-all;
+}
+
+// WhatsApp message cards (bookings drawer + WhatsApp page)
+.msg-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+.msg {
+  border: 1px solid var(--theme-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.msg.card {
+  padding: 16px 18px;
+}
+.msg-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.88rem;
+}
+
+@include bp.down(bp.$tablet) {
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+}

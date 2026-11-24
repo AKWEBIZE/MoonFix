@@ -1,0 +1,10 @@
+:host {
+  display: block;
+}
+// Google renders its own iframe button here; keep a fixed height so nothing jumps.
+.g-host {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+  width: 100%;
+}

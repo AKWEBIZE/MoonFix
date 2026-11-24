@@ -1,0 +1,223 @@
+<div class="page-head">
+  <h1>Technician availability</h1>
+</div>
+
+<!-- Day grid -->
+<div class="card">
+  <div class="grid-toolbar">
+    <div class="date-nav">
+      <button class="icon-btn" (click)="move(-1)" aria-label="Previous day">
+        <app-icon name="chevronL" />
+      </button>
+      <input type="date" [(ngModel)]="date" (change)="loadGrid()" />
+      <button class="icon-btn" (click)="move(1)" aria-label="Next day">
+        <app-icon name="chevronR" />
+      </button>
+      <button class="btn btn-ghost btn-sm" (click)="date = today; loadGrid()">Today</button>
+    </div>
+    <b>{{ date | prettyDate }}</b>
+    @if (grid()?.blocked; as bl) {
+      <button class="btn btn-sm btn-outline" (click)="unblock(bl.id)">Re-open this day</button>
+    } @else {
+      <button class="btn btn-sm btn-danger-outline" (click)="blockDay()">
+        <app-icon name="ban" [size]="16" /> Close this day (holiday)
+      </button>
+    }
+  </div>
+
+  @if (grid(); as g) {
+    @if (g.closedReason) {
+      <div class="notice">
+        Customers cannot book this day: <b>{{ g.closedReason }}</b>
+      </div>
+    }
+    <p class="muted small">
+      Click a <span class="legend free">free</span> cell to mark the technician unavailable for that
+      slot, click a <span class="legend leave">leave</span> cell to make them available again.
+      <span class="legend booked">Booked</span> cells open the booking.
+    </p>
+    <div class="table-scroll">
+      <table class="avail-grid">
+        <thead>
+          <tr>
+            <th>Technician</th>
+            @for (s of g.slots; track s.id) {
+              <th>
+                {{ s.start | time12 }}<br /><small>{{ s.end | time12 }}</small>
+              </th>
+            }
+            <th>Full day</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of g.technicians; track t.id) {
+            <tr>
+              <td class="tech-cell">
+                <b>{{ t.name }}</b><small>{{ skillText(t.skills) }}</small>
+              </td>
+              @for (c of t.cells; track c.slotId) {
+                <td>
+                  <button
+                    class="cell"
+                    [attr.data-state]="c.state"
+                    [disabled]="c.state === 'weekly_off'"
+                    (click)="cellClick(t.id, c)"
+                    [title]="c.booking ? c.booking.ref + ' · ' + c.booking.customer_name : c.state"
+                  >
+                    @switch (c.state) {
+                      @case ('booked') {
+                        <span>{{ c.booking?.customer_name }}</span><small>{{
+                          c.booking?.service_name
+                        }}</small>
+                      }
+                      @case ('leave') {
+                        <span>{{ c.fullDay ? 'Day off' : 'Unavailable' }}</span>
+                      }
+                      @case ('weekly_off') {
+                        <span>Weekly off</span>
+                      }
+                      @default {
+                        <span>Free</span>
+                      }
+                    }
+                  </button>
+                </td>
+              }
+              <td>
+                @if (t.weeklyOff) {
+                  <small class="muted">Weekly off</small>
+                } @else if (t.fullDayLeave) {
+                  <button class="btn btn-xs btn-outline" (click)="removeLeave(t.fullDayLeave.id)">
+                    Mark available
+                  </button>
+                } @else {
+                  <button class="btn btn-xs btn-danger-outline" (click)="addLeave(t.id, null)">
+                    Mark day off
+                  </button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td [attr.colspan]="g.slots.length + 2" class="muted center">
+                No active technicians. Add them in Technicians.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (g.unassigned.length) {
+      <div class="notice warn mt">
+        <b>{{ g.unassigned.length }} booking(s) without a technician:</b>
+        @for (u of g.unassigned; track u.id) {
+          <button class="link-btn" (click)="openBooking(u.id)">
+            {{ u.ref }} ({{ u.customer_name }})
+          </button>
+        }
+      </div>
+    }
+  } @else {
+    <p class="muted">Loading…</p>
+  }
+</div>
+
+<div class="two-col mt">
+  <!-- Leave planner -->
+  <div class="card">
+    <h3>Plan leave</h3>
+    <div class="form-grid">
+      <label class="field full"
+        ><span>Technician</span>
+        <select [(ngModel)]="leave.technicianId">
+          @for (t of techs(); track t.id) {
+            <option [ngValue]="t.id">{{ t.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="field"><span>From</span><input type="date" [(ngModel)]="leave.date" /></label>
+      <label class="field"
+        ><span>To</span><input type="date" [(ngModel)]="leave.toDate" [min]="leave.date"
+      /></label>
+      <label class="field"
+        ><span>Slot</span>
+        <select [(ngModel)]="leave.slotId">
+          <option [ngValue]="null">Full day</option>
+          @for (s of slots(); track s.id) {
+            <option [ngValue]="s.id">{{ s.start | time12 }} – {{ s.end | time12 }}</option>
+          }
+        </select>
+      </label>
+      <label class="field"
+        ><span>Reason</span><input [(ngModel)]="leave.reason" placeholder="Optional"
+      /></label>
+    </div>
+    <div class="actions-end">
+      <button
+        class="btn btn-primary btn-sm"
+        (click)="planLeave()"
+        [disabled]="!leave.technicianId || !leave.date"
+      >
+        Add leave
+      </button>
+    </div>
+
+    <h4 class="mt">Upcoming leave</h4>
+    <ul class="simple-list">
+      @for (l of leaves(); track l.id) {
+        <li>
+          <span
+            ><b>{{ l.technicianName }}</b> · {{ l.date | prettyDate: 'short' }} ·
+            {{ l.slotId ? (l.slotStart | time12) + '–' + (l.slotEnd | time12) : 'Full day' }}
+            @if (l.reason) {
+              <small class="muted">({{ l.reason }})</small>
+            }
+          </span>
+          <button class="icon-btn sm" (click)="removeLeave(l.id)" aria-label="Remove">
+            <app-icon name="trash" [size]="16" />
+          </button>
+        </li>
+      } @empty {
+        <li class="muted">No upcoming leave.</li>
+      }
+    </ul>
+  </div>
+
+  <!-- Holidays -->
+  <div class="card">
+    <h3>Holidays / closed dates</h3>
+    <div class="form-grid">
+      <label class="field"
+        ><span>Date</span><input type="date" [(ngModel)]="holiday.date" [min]="today"
+      /></label>
+      <label class="field"
+        ><span>Reason</span><input [(ngModel)]="holiday.reason" placeholder="e.g. Diwali"
+      /></label>
+    </div>
+    <div class="actions-end">
+      <button class="btn btn-primary btn-sm" [disabled]="!holiday.date" (click)="addHoliday()">
+        Add holiday
+      </button>
+    </div>
+    <ul class="simple-list mt">
+      @for (h of holidays(); track h.id) {
+        <li>
+          <span
+            ><b>{{ h.date | prettyDate }}</b>
+            @if (h.reason) {
+              <small class="muted">— {{ h.reason }}</small>
+            }
+          </span>
+          <button class="icon-btn sm" (click)="unblock(h.id)" aria-label="Remove">
+            <app-icon name="trash" [size]="16" />
+          </button>
+        </li>
+      } @empty {
+        <li class="muted">No holidays added.</li>
+      }
+    </ul>
+    <p class="muted small">
+      Weekly closed days and slot timings are set in <b>Time slots & days</b>.
+    </p>
+  </div>
+</div>

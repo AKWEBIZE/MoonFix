@@ -1,0 +1,61 @@
+// Table, filters and message cards come from src/styles/_admin.scss
+
+// ---------- Booking detail drawer ----------
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(var(--theme-black-rgb), 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 90;
+}
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(580px, 100vw);
+  background: var(--theme-white);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.25s ease-out;
+}
+@keyframes slideIn {
+  from {
+    transform: translateX(40px);
+    opacity: 0;
+  }
+}
+.drawer-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--theme-border);
+}
+.drawer-head h2 {
+  margin: 2px 0 0;
+  font-size: 1.35rem;
+}
+.drawer-body {
+  padding: 20px 24px 40px;
+  overflow-y: auto;
+}
+.drawer-body h4 {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--theme-border);
+}
+.quick-actions,
+.wa-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.custom-msg {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  margin-top: 10px;
+}

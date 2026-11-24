@@ -1,0 +1,592 @@
+<section class="page-banner">
+  <div class="container banner-grid">
+    <div>
+      <h1>{{ done() ? 'You are all set!' : 'Book a technician' }}</h1>
+      <p>
+        {{
+          done()
+            ? 'Your doorstep service is confirmed.'
+            : 'Choose your service, pick a slot and we will be at your door.'
+        }}
+      </p>
+      <div class="banner-points">
+        <span><app-icon name="check" [size]="16" /> Instant confirmation</span>
+        <span><app-icon name="rupee" [size]="16" /> Pay after service</span>
+        <span><app-icon name="whatsapp" [size]="16" /> WhatsApp updates</span>
+      </div>
+    </div>
+    <!-- Live scene that follows the customer's choices -->
+    <div class="banner-scene" aria-hidden="true">
+      <div class="bs-appliance">
+        @for (c of [service()?.category || category()]; track c) {
+          <app-appliance-anim class="swap" [category]="c" />
+        }
+      </div>
+      <div class="bs-chip bs-date" [class.set]="date()">
+        <app-icon name="calendar" [size]="16" />
+        @for (d of [date()]; track d) {
+          <span class="swap">{{ d ? (d | prettyDate: 'short') : 'Pick a date' }}</span>
+        }
+      </div>
+      <div class="bs-chip bs-time" [class.set]="slot()">
+        <app-icon name="clock" [size]="16" />
+        @for (sl of [slot()]; track sl?.id) {
+          <span class="swap">{{ sl ? (sl.start | time12) : 'Pick a time' }}</span>
+        }
+      </div>
+      <div class="bs-chip bs-tech" [class.set]="match() === 'found'">
+        <app-icon name="user" [size]="16" />
+        <span>{{
+          match() === 'found'
+            ? 'Technician free'
+            : match() === 'searching'
+              ? 'Matching…'
+              : 'Expert technician'
+        }}</span>
+      </div>
+      <div class="bs-road">
+        <span class="bs-van"><app-icon name="tool" [size]="14" /></span>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="page-body">
+  <div class="container">
+    @if (done(); as b) {
+      <div class="card elevated success-card" style="max-width: 720px; margin: 0 auto">
+        <div class="confetti" aria-hidden="true">
+          @for (p of confetti; track $index) {
+            <i
+              [style.left.%]="p.x"
+              [style.background]="p.c"
+              [style.animation-delay.ms]="p.d"
+              [style.width.px]="p.w"
+              [style.--rot]="p.r + 'deg'"
+            ></i>
+          }
+        </div>
+        <svg class="check-draw" viewBox="0 0 100 100" aria-hidden="true">
+          <circle class="cd-ring" cx="50" cy="50" r="44" />
+          <path class="cd-tick" d="M30 52 L44 66 L71 37" />
+        </svg>
+        <h2>Booking confirmed!</h2>
+        <p class="muted">Thank you {{ b.customerName }}. Your doorstep service is booked.</p>
+        <div class="ref-box">
+          Booking ID <b>{{ b.ref }}</b>
+        </div>
+
+        <div class="next-steps">
+          <div class="ns-item ns-1">
+            <span class="ns-icon"><app-icon name="whatsapp" [size]="18" /></span
+            ><span
+              ><b>WhatsApp confirmation</b><small>Details on their way to your phone</small></span
+            >
+          </div>
+          <div class="ns-item ns-2">
+            <span class="ns-icon"><app-icon name="user" [size]="18" /></span
+            ><span
+              ><b>{{ b.technicianName ? 'Technician assigned' : 'Assigning technician' }}</b
+              ><small>{{ b.technicianName || 'We will confirm shortly' }}</small></span
+            >
+          </div>
+          <div class="ns-item ns-3">
+            <span class="ns-icon"><app-icon name="home" [size]="18" /></span
+            ><span
+              ><b>Visit at your door</b
+              ><small>{{ b.date | prettyDate: 'short' }}, {{ b.slotStart | time12 }}</small></span
+            >
+          </div>
+          <div class="ns-road">
+            <span class="ns-van"><app-icon name="tool" [size]="14" /></span>
+          </div>
+        </div>
+        <dl class="summary">
+          <div>
+            <dt>Service</dt>
+            <dd>{{ b.serviceName }}</dd>
+          </div>
+          <div>
+            <dt>Date</dt>
+            <dd>{{ b.date | prettyDate }}</dd>
+          </div>
+          <div>
+            <dt>Time</dt>
+            <dd>{{ b.slotStart | time12 }} – {{ b.slotEnd | time12 }}</dd>
+          </div>
+          <div>
+            <dt>Address</dt>
+            <dd>{{ b.address }}</dd>
+          </div>
+          @if (b.technicianName) {
+            <div>
+              <dt>Technician</dt>
+              <dd>{{ b.technicianName }}</dd>
+            </div>
+          }
+          <div>
+            <dt>Starting price</dt>
+            <dd>₹{{ b.price | number }}</dd>
+          </div>
+        </dl>
+        <div class="row-actions center">
+          <a
+            class="btn btn-wa"
+            [href]="site.waLink('Hi, my booking ID is ' + b.ref)"
+            target="_blank"
+            rel="noopener"
+            ><app-icon name="whatsapp" /> Message us on WhatsApp</a
+          >
+          @if (account.loggedIn() && !account.customer()?.needsPhone) {
+            <a class="btn btn-outline" routerLink="/account">View in My Orders</a>
+          } @else {
+            <a class="btn btn-outline" routerLink="/track" [queryParams]="{ ref: b.ref }"
+              >Track booking</a
+            >
+          }
+        </div>
+        <button class="link-btn" (click)="reset()">Book another service</button>
+      </div>
+    } @else {
+      <div class="book-layout">
+        <div class="card elevated">
+          <ol class="stepper">
+            @for (s of stepNames; track $index) {
+              <li
+                [class.active]="step() === $index + 1"
+                [class.done]="step() > $index + 1"
+                (click)="goTo($any($index + 1))"
+              >
+                <span>{{ step() > $index + 1 ? '✓' : $index + 1 }}</span>{{ s }}
+              </li>
+            }
+          </ol>
+
+          <div>
+            <!-- STEP 1: Service -->
+            @if (step() === 1) {
+              <div class="step-pane">
+                <div class="step-title">
+                  <div>
+                    <h3>What do you need help with?</h3>
+                    <p>Select your appliance and the service you need</p>
+                  </div>
+                </div>
+                <div class="cat-tabs">
+                  @for (c of categories; track c) {
+                    <button
+                      class="cat-tab"
+                      [class.active]="category() === c"
+                      (click)="category.set(c)"
+                    >
+                      <app-appliance-anim [category]="c" />{{ labels[c] }}
+                    </button>
+                  }
+                </div>
+                <div class="option-list">
+                  @for (s of servicesInCategory(); track s.id; let i = $index) {
+                    <label
+                      class="option stagger"
+                      [style.animation-delay.ms]="i * 70"
+                      [class.selected]="service()?.id === s.id"
+                    >
+                      <input
+                        type="radio"
+                        name="svc"
+                        [checked]="service()?.id === s.id"
+                        (change)="pickService(s)"
+                      />
+                      <div class="option-body">
+                        <b>{{ s.name }}</b>
+                        <small>{{ s.description }}</small>
+                      </div>
+                      <span class="price">₹{{ s.price | number }}</span>
+                    </label>
+                  } @empty {
+                    <p class="muted">No services available in this category right now.</p>
+                  }
+                </div>
+                <div class="actions-end">
+                  <button class="btn btn-primary" [disabled]="!service()" (click)="goTo(2)">
+                    Continue <app-icon name="chevronR" [size]="18" />
+                  </button>
+                </div>
+              </div>
+            }
+
+            <!-- STEP 2: Date & slot -->
+            @if (step() === 2) {
+              <div class="step-pane">
+                <div class="step-title">
+                  <div>
+                    <h3>Choose date & time</h3>
+                    <p>Greyed-out dates are holidays or fully booked</p>
+                  </div>
+                </div>
+                <div class="date-strip">
+                  <button class="icon-btn" (click)="scrollDates(-1)" aria-label="Earlier">
+                    <app-icon name="chevronL" />
+                  </button>
+                  <div class="date-scroll" #strip>
+                    @for (d of dates(); track d.date; let i = $index) {
+                      <button
+                        class="date-chip stagger"
+                        [style.animation-delay.ms]="i * 35"
+                        [class.today]="d.date === today"
+                        [class.selected]="date() === d.date"
+                        [disabled]="!d.open"
+                        [title]="d.reason || ''"
+                        (click)="pickDate(d.date)"
+                      >
+                        <small>{{ dow(d.date) }}</small>
+                        <b>{{ dayNum(d.date) }}</b>
+                        <small>{{ mon(d.date) }}</small>
+                      </button>
+                    } @empty {
+                      @for (i of [1, 2, 3, 4, 5, 6, 7]; track i) {
+                        <span class="date-chip skel"></span>
+                      }
+                    }
+                  </div>
+                  <button class="icon-btn" (click)="scrollDates(1)" aria-label="Later">
+                    <app-icon name="chevronR" />
+                  </button>
+                </div>
+
+                @if (date()) {
+                  <h4 class="mt">Available slots on {{ date() | prettyDate }}</h4>
+                  @if (loadingSlots()) {
+                    <div class="scan-row">
+                      <span class="radar"></span> Checking technician availability…
+                    </div>
+                    <div class="slot-grid">
+                      @for (i of [1, 2, 3, 4, 5]; track i) {
+                        <span class="slot skel"></span>
+                      }
+                    </div>
+                  } @else {
+                    <div class="slot-grid">
+                      @for (s of slots(); track s.id; let i = $index) {
+                        <button
+                          class="slot stagger"
+                          [style.animation-delay.ms]="i * 60"
+                          [class.live]="s.available"
+                          [class.selected]="slot()?.id === s.id"
+                          [disabled]="!s.available"
+                          (click)="slot.set(s)"
+                        >
+                          <b>{{ s.start | time12 }} – {{ s.end | time12 }}</b>
+                          <small [class.few]="s.available && s.remaining <= 1">{{
+                            s.available
+                              ? s.remaining <= 1
+                                ? 'Last slot left!'
+                                : 'Available'
+                              : s.reason
+                          }}</small>
+                        </button>
+                      } @empty {
+                        <p class="muted">No slots configured.</p>
+                      }
+                    </div>
+                    @if (slots().length && !anySlot()) {
+                      <p class="notice">
+                        All slots are booked for this day. Please pick another date or
+                        <a [href]="site.whatsappLink()" target="_blank" rel="noopener"
+                          >WhatsApp us</a
+                        >.
+                      </p>
+                    }
+                  }
+                }
+                <div class="actions-split">
+                  <button class="btn btn-ghost" (click)="goTo(1)">
+                    <app-icon name="chevronL" [size]="18" /> Back
+                  </button>
+                  <button class="btn btn-primary" [disabled]="!slot()" (click)="goTo(3)">
+                    Continue <app-icon name="chevronR" [size]="18" />
+                  </button>
+                </div>
+              </div>
+            }
+
+            <!-- STEP 3: Details -->
+            @if (step() === 3) {
+              <div class="step-pane">
+                <div class="step-title">
+                  <div>
+                    <h3>Your details</h3>
+                    <p>Where should our technician come?</p>
+                  </div>
+                </div>
+                <form #f="ngForm" class="form-grid" (ngSubmit)="f.valid && goTo(4)">
+                  <label class="field">
+                    <span>Full name *</span>
+                    <input
+                      name="name"
+                      [(ngModel)]="form.customerName"
+                      required
+                      minlength="2"
+                      maxlength="100"
+                      autocomplete="name"
+                    />
+                  </label>
+                  <label class="field">
+                    <span>WhatsApp / Mobile number *</span>
+                    <input
+                      name="phone"
+                      [(ngModel)]="form.phone"
+                      required
+                      pattern="^[+]?[0-9 \-]{10,15}$"
+                      inputmode="tel"
+                      autocomplete="tel"
+                      placeholder="98765 43210"
+                    />
+                  </label>
+                  <label class="field full">
+                    <span>Full address *</span>
+                    <textarea
+                      name="address"
+                      [(ngModel)]="form.address"
+                      required
+                      minlength="8"
+                      rows="2"
+                      autocomplete="street-address"
+                      placeholder="House no, street, area, city"
+                    ></textarea>
+                  </label>
+                  <label class="field">
+                    <span>Landmark</span>
+                    <input name="landmark" [(ngModel)]="form.landmark" maxlength="200" />
+                  </label>
+                  <label class="field">
+                    <span>Pincode</span>
+                    <input
+                      name="pincode"
+                      [(ngModel)]="form.pincode"
+                      pattern="^[0-9]{6}$"
+                      inputmode="numeric"
+                      maxlength="6"
+                    />
+                  </label>
+                  <label class="field">
+                    <span>Appliance brand</span>
+                    <input
+                      name="brand"
+                      [(ngModel)]="form.brand"
+                      maxlength="60"
+                      placeholder="e.g. LG, Samsung, Voltas"
+                    />
+                  </label>
+                  <label class="field full">
+                    <span>Describe the problem</span>
+                    <textarea
+                      name="issue"
+                      [(ngModel)]="form.issue"
+                      rows="2"
+                      maxlength="1000"
+                      placeholder="e.g. AC not cooling, water leaking from indoor unit"
+                    ></textarea>
+                  </label>
+                  <!-- Bot trap: hidden from people, but bots fill in every field -->
+                  <div class="hp" aria-hidden="true">
+                    <label
+                      >Website
+                      <input
+                        name="website"
+                        [(ngModel)]="form.website"
+                        tabindex="-1"
+                        autocomplete="off"
+                    /></label>
+                  </div>
+                  <label class="check full">
+                    <input type="checkbox" name="optin" [(ngModel)]="form.whatsappOptin" />
+                    Send me booking confirmation, reminders and updates on WhatsApp
+                  </label>
+                  @if (f.submitted && f.invalid) {
+                    <p class="error full">
+                      Please fill the required fields correctly (name, 10-digit mobile number and
+                      full address).
+                    </p>
+                  }
+                  <div class="actions-split full">
+                    <button type="button" class="btn btn-ghost" (click)="goTo(2)">
+                      <app-icon name="chevronL" [size]="18" /> Back
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                      Review booking <app-icon name="chevronR" [size]="18" />
+                    </button>
+                  </div>
+                </form>
+              </div>
+            }
+
+            <!-- STEP 4: Review -->
+            @if (step() === 4) {
+              <div class="step-pane">
+                <div class="step-title">
+                  <div>
+                    <h3>Review & confirm</h3>
+                    <p>Check everything before you confirm</p>
+                  </div>
+                </div>
+                <dl class="summary">
+                  <div>
+                    <dt>Service</dt>
+                    <dd>
+                      {{ service()?.name }}
+                      <button class="link-btn" (click)="goTo(1)">change</button>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Date & time</dt>
+                    <dd>
+                      {{ date() | prettyDate }}, {{ slot()?.start | time12 }} –
+                      {{ slot()?.end | time12 }}
+                      <button class="link-btn" (click)="goTo(2)">change</button>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Name</dt>
+                    <dd>{{ form.customerName }}</dd>
+                  </div>
+                  <div>
+                    <dt>Mobile</dt>
+                    <dd>{{ form.phone }}</dd>
+                  </div>
+                  <div>
+                    <dt>Address</dt>
+                    <dd>
+                      {{ form.address }}{{ form.landmark ? ', ' + form.landmark : ''
+                      }}{{ form.pincode ? ' - ' + form.pincode : '' }}
+                      <button class="link-btn" (click)="goTo(3)">change</button>
+                    </dd>
+                  </div>
+                  @if (form.issue) {
+                    <div>
+                      <dt>Problem</dt>
+                      <dd>{{ form.issue }}</dd>
+                    </div>
+                  }
+                  <div>
+                    <dt>Starting price</dt>
+                    <dd>
+                      <b>₹{{ service()?.price | number }}</b>
+                      <small class="muted">(pay after service)</small>
+                    </dd>
+                  </div>
+                </dl>
+                @if (error()) {
+                  <p class="error">{{ error() }}</p>
+                }
+                <div class="actions-split">
+                  <button class="btn btn-ghost" (click)="goTo(3)">
+                    <app-icon name="chevronL" [size]="18" /> Back
+                  </button>
+                  <button
+                    class="btn btn-primary btn-lg confirm-btn"
+                    [disabled]="submitting()"
+                    (click)="submit()"
+                  >
+                    @if (submitting()) {
+                      <span class="spinner"></span> Booking your slot…
+                    } @else {
+                      <app-icon name="check" [size]="18" /> Confirm booking
+                    }
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Sticky booking summary -->
+        <aside class="book-side">
+          <div class="card side-summary">
+            <div class="side-head">
+              <h4>Your booking</h4>
+              <span class="side-pct">{{ progress() }}%</span>
+            </div>
+            <div class="side-meter"><span [style.width.%]="progress()"></span></div>
+            <div class="side-row" [class.filled]="service()">
+              <span class="si"
+                ><app-icon [name]="service()?.category || 'tool'" [size]="18"
+              /></span>
+              <span
+                ><small>Service</small>
+                @for (sv of [service()]; track sv?.id) {
+                  @if (sv) {
+                    <b class="swap">{{ sv.name }}</b>
+                  } @else {
+                    <b class="ph">Not selected</b>
+                  }
+                }
+              </span>
+              <span class="side-ok"><app-icon name="check" [size]="14" /></span>
+            </div>
+            <div class="side-row" [class.filled]="date()">
+              <span class="si"><app-icon name="calendar" [size]="18" /></span>
+              <span
+                ><small>Date</small>
+                @for (d of [date()]; track d) {
+                  @if (d) {
+                    <b class="swap">{{ d | prettyDate }}</b>
+                  } @else {
+                    <b class="ph">Pick a date</b>
+                  }
+                }
+              </span>
+              <span class="side-ok"><app-icon name="check" [size]="14" /></span>
+            </div>
+            <div class="side-row" [class.filled]="slot()">
+              <span class="si"><app-icon name="clock" [size]="18" /></span>
+              <span
+                ><small>Time slot</small>
+                @for (sl of [slot()]; track sl?.id) {
+                  @if (sl) {
+                    <b class="swap">{{ sl.start | time12 }} – {{ sl.end | time12 }}</b>
+                  } @else {
+                    <b class="ph">Pick a slot</b>
+                  }
+                }
+              </span>
+              <span class="side-ok"><app-icon name="check" [size]="14" /></span>
+            </div>
+            @if (match() !== 'idle') {
+              <div class="tech-match" [class.found]="match() === 'found'">
+                @if (match() === 'searching') {
+                  <span class="radar"></span
+                  ><span
+                    ><b>Matching a technician…</b
+                    ><small>Checking who is free in this slot</small></span
+                  >
+                } @else {
+                  <span class="tm-icon"><app-icon name="check" [size]="16" /></span>
+                  <span class="swap"
+                    ><b>Technician available</b><small>{{ techFreeText() }}</small></span
+                  >
+                }
+              </div>
+            }
+            <div class="side-total">
+              <span class="muted small">Starting from</span>
+              @for (p of [service()?.price ?? 0]; track p) {
+                <b class="swap">₹{{ p | number }}</b>
+              }
+            </div>
+          </div>
+          <div class="side-assure">
+            <span><app-icon name="check" [size]="16" /> No payment until the job is done</span>
+            <span><app-icon name="check" [size]="16" /> Free cancellation before the visit</span>
+            <span><app-icon name="check" [size]="16" /> Warranty on every repair</span>
+          </div>
+          <div class="side-help">
+            <h4>Need help booking?</h4>
+            <p>Message us and we will book it for you.</p>
+            <a class="btn btn-wa btn-sm" [href]="site.whatsappLink()" target="_blank" rel="noopener"
+              ><app-icon name="whatsapp" [size]="16" /> Chat on WhatsApp</a
+            >
+          </div>
+        </aside>
+      </div>
+    }
+  </div>
+</section>

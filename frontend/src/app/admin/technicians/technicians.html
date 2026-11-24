@@ -1,0 +1,107 @@
+<div class="page-head">
+  <h1>Technicians</h1>
+  <button class="btn btn-primary btn-sm" (click)="edit.set(blankTech())">
+    <app-icon name="plus" [size]="16" /> Add technician
+  </button>
+</div>
+
+@if (edit(); as e) {
+  <div class="card">
+    <h3>{{ e.id ? 'Edit technician' : 'New technician' }}</h3>
+    <div class="form-grid">
+      <label class="field"><span>Name *</span><input [(ngModel)]="e.name" /></label>
+      <label class="field"
+        ><span>WhatsApp number *</span
+        ><input [(ngModel)]="e.phone" inputmode="tel" placeholder="98765 43210"
+      /></label>
+      <div class="field full">
+        <span>Skills (services they can handle) *</span>
+        <div class="chips">
+          @for (c of categories; track c) {
+            <label class="chip" [class.on]="e.skills?.includes(c)"
+              ><input
+                type="checkbox"
+                [checked]="e.skills?.includes(c)"
+                (change)="toggle(e.skills!, c)"
+              />
+              {{ labels[c] }}</label
+            >
+          }
+        </div>
+      </div>
+      <div class="field full">
+        <span>Weekly off days</span>
+        <div class="chips">
+          @for (d of weekdays; track $index) {
+            <label class="chip" [class.on]="e.weeklyOff?.includes($index)"
+              ><input
+                type="checkbox"
+                [checked]="e.weeklyOff?.includes($index)"
+                (change)="toggle(e.weeklyOff!, $index)"
+              />
+              {{ d }}</label
+            >
+          }
+        </div>
+      </div>
+      <label class="check full"
+        ><input type="checkbox" [(ngModel)]="e.active" /> Active (can receive bookings)</label
+      >
+    </div>
+    <div class="actions-end">
+      <button class="btn btn-ghost" (click)="edit.set(null)">Cancel</button>
+      <button class="btn btn-primary" (click)="save(e)">Save</button>
+    </div>
+  </div>
+}
+
+<div class="card table-card mt">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>WhatsApp</th>
+        <th>Skills</th>
+        <th>Weekly off</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (t of list(); track t.id) {
+        <tr [class.dim]="!t.active">
+          <td>
+            <b>{{ t.name }}</b>
+          </td>
+          <td>{{ t.phone | phone }}</td>
+          <td>
+            @for (s of t.skills; track s) {
+              <span class="tag">{{ labels[s] }}</span>
+            }
+          </td>
+          <td>{{ offText(t.weeklyOff) }}</td>
+          <td>
+            <span class="badge" [attr.data-status]="t.active ? 'confirmed' : 'cancelled'">{{
+              t.active ? 'Active' : 'Inactive'
+            }}</span>
+          </td>
+          <td class="row-btns">
+            <button class="icon-btn sm" (click)="edit.set(copy(t))" aria-label="Edit">
+              <app-icon name="edit" [size]="16" />
+            </button>
+            <button class="icon-btn sm" (click)="remove(t)" aria-label="Delete">
+              <app-icon name="trash" [size]="16" />
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="muted center">No technicians yet.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+<p class="muted small">
+  Tip: use <b>Availability</b> to mark a technician on leave for a day or a specific slot.
+</p>

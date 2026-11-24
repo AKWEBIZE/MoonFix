@@ -1,0 +1,186 @@
+<section class="page-banner">
+  <div class="container narrow">
+    <h1>My orders</h1>
+    <p>Your doorstep service bookings, upcoming and past.</p>
+  </div>
+</section>
+
+<section class="page-body">
+  <div class="container narrow">
+    @if (me(); as c) {
+      <!-- Profile -->
+      <div class="card profile">
+        @if (c.picture) {
+          <img class="avatar" [src]="c.picture" alt="" referrerpolicy="no-referrer" />
+        } @else {
+          <span class="avatar initials">{{
+            (c.name || c.email || '?').charAt(0).toUpperCase()
+          }}</span>
+        }
+        <div class="who">
+          @if (editingName()) {
+            <form class="name-form" (ngSubmit)="saveName()">
+              <input
+                name="name"
+                [(ngModel)]="nameDraft"
+                placeholder="Your name"
+                maxlength="100"
+                required
+              />
+              <button class="btn btn-primary btn-sm" [disabled]="nameDraft.trim().length < 2">
+                Save
+              </button>
+              <button type="button" class="link-btn" (click)="editingName.set(false)">
+                Cancel
+              </button>
+            </form>
+          } @else {
+            <h2>
+              {{ c.name || 'Hello!' }}
+              <button class="icon-btn small-edit" (click)="startEditName()" aria-label="Edit name">
+                <app-icon name="edit" [size]="14" />
+              </button>
+            </h2>
+          }
+          <p class="muted">
+            @if (c.phone) {
+              <span><app-icon name="whatsapp" [size]="14" /> {{ c.phone | phone }}</span>
+            }
+            @if (c.email) {
+              <span><app-icon name="message" [size]="14" /> {{ c.email }}</span>
+            }
+          </p>
+        </div>
+        <button class="btn btn-ghost btn-sm" (click)="auth.logout()">
+          <app-icon name="logout" [size]="16" /> Log out
+        </button>
+      </div>
+
+      @if (c.needsPhone) {
+        <!-- Google customers: confirm the mobile number once -->
+        <div class="card elevated mt link-card">
+          <h3>Confirm your mobile number</h3>
+          <p class="muted">
+            Your bookings are saved with the mobile number you booked with. Confirm it once on
+            WhatsApp and we’ll show all your orders here — including earlier ones.
+          </p>
+          <app-wa-otp
+            purpose="link"
+            submitLabel="Confirm on WhatsApp"
+            (verified)="phoneLinked($event)"
+          />
+        </div>
+      } @else {
+        <!-- Orders -->
+        <div class="orders-head mt">
+          <div class="tabs" role="tablist">
+            <button role="tab" [class.on]="tab() === 'upcoming'" (click)="tab.set('upcoming')">
+              Upcoming <span class="count">{{ upcoming().length }}</span>
+            </button>
+            <button role="tab" [class.on]="tab() === 'past'" (click)="tab.set('past')">
+              Past <span class="count">{{ past().length }}</span>
+            </button>
+          </div>
+          <a class="btn btn-primary btn-sm" routerLink="/book"
+            ><app-icon name="plus" [size]="16" /> New booking</a
+          >
+        </div>
+
+        @if (loading()) {
+          <p class="muted center mt">Loading your bookings…</p>
+        } @else if (error()) {
+          <p class="error mt">
+            {{ error() }} <button class="link-btn" (click)="load()">Try again</button>
+          </p>
+        } @else if (!shown().length) {
+          <div class="card empty mt">
+            <app-icon name="calendar" [size]="30" />
+            @if (tab() === 'upcoming') {
+              <h3>No upcoming visits</h3>
+              <p class="muted">Book a technician and it will show up here.</p>
+              <a class="btn btn-primary" routerLink="/book">Book a service</a>
+            } @else {
+              <h3>No past bookings yet</h3>
+              <p class="muted">Completed and cancelled bookings will appear here.</p>
+            }
+          </div>
+        } @else {
+          <div class="orders">
+            @for (o of shown(); track o.ref) {
+              <article class="card order">
+                <div class="order-top">
+                  <div>
+                    <h3>{{ o.serviceName }}</h3>
+                    <small class="muted"
+                      >Booking ID <b>{{ o.ref }}</b></small
+                    >
+                  </div>
+                  <span class="badge" [attr.data-status]="o.status">{{
+                    statusLabels[o.status]
+                  }}</span>
+                </div>
+                <dl class="order-facts">
+                  <div>
+                    <dt><app-icon name="calendar" [size]="15" /> Date</dt>
+                    <dd>{{ o.date | prettyDate }}</dd>
+                  </div>
+                  <div>
+                    <dt><app-icon name="clock" [size]="15" /> Time</dt>
+                    <dd>{{ o.slotStart | time12 }} – {{ o.slotEnd | time12 }}</dd>
+                  </div>
+                  <div>
+                    <dt><app-icon name="tool" [size]="15" /> Technician</dt>
+                    <dd>{{ o.technicianName || 'Assigning soon' }}</dd>
+                  </div>
+                  <div>
+                    <dt><app-icon name="rupee" [size]="15" /> Starting from</dt>
+                    <dd>₹{{ o.price | number }}</dd>
+                  </div>
+                  <div class="wide">
+                    <dt><app-icon name="pin" [size]="15" /> Address</dt>
+                    <dd>
+                      {{ o.address }}{{ o.landmark ? ', ' + o.landmark : ''
+                      }}{{ o.pincode ? ' - ' + o.pincode : '' }}
+                    </dd>
+                  </div>
+                </dl>
+                <div class="order-actions">
+                  <a
+                    class="btn btn-outline btn-sm"
+                    routerLink="/track"
+                    [queryParams]="{ ref: o.ref }"
+                    >Track</a
+                  >
+                  <a
+                    class="btn btn-ghost btn-sm"
+                    [href]="site.waLink('Hi, I need help with booking ' + o.ref)"
+                    target="_blank"
+                    rel="noopener"
+                    ><app-icon name="whatsapp" [size]="16" /> Help</a
+                  >
+                  @if (canCancel(o)) {
+                    <button
+                      class="btn btn-danger-outline btn-sm"
+                      [disabled]="cancelling() === o.ref"
+                      (click)="cancel(o)"
+                    >
+                      {{ cancelling() === o.ref ? 'Cancelling…' : 'Cancel' }}
+                    </button>
+                  }
+                  @if (o.status === 'completed' || o.status === 'cancelled') {
+                    <a
+                      class="btn btn-primary btn-sm"
+                      routerLink="/book"
+                      [queryParams]="{ service: o.serviceId }"
+                      >Book again</a
+                    >
+                  }
+                </div>
+              </article>
+            }
+          </div>
+        }
+      }
+    }
+  </div>
+</section>

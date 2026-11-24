@@ -1,0 +1,72 @@
+<div class="page-head">
+  <h1>Dashboard</h1>
+  <button class="btn btn-outline btn-sm" (click)="load()">
+    <app-icon name="refresh" [size]="16" /> Refresh
+  </button>
+</div>
+
+@if (d(); as d) {
+  @if (d.whatsappProvider === 'none') {
+    <div class="notice">
+      <b>WhatsApp is in manual mode.</b> Follow-up messages are prepared automatically — open
+      <a routerLink="../whatsapp">WhatsApp follow-ups</a> and click “Send” to deliver them from your
+      phone. Configure the Meta Cloud API or Twilio in the backend <code>.env</code> for fully
+      automatic sending.
+    </div>
+  }
+  <div class="stats">
+    <div class="stat">
+      <small>Today's jobs</small><b>{{ d.todayTotal }}</b
+      ><span>{{ d.todayCompleted }} completed</span>
+    </div>
+    <div class="stat warn">
+      <small>Unassigned</small><b>{{ d.pending }}</b
+      ><span>need a technician</span>
+    </div>
+    <div class="stat">
+      <small>Upcoming</small><b>{{ d.upcoming }}</b
+      ><span>after today</span>
+    </div>
+    <div class="stat">
+      <small>Active technicians</small><b>{{ d.activeTechnicians }}</b
+      ><span>&nbsp;</span>
+    </div>
+    <div class="stat" [class.danger]="d.failedMessages">
+      <small>WhatsApp to send</small><b>{{ d.manualMessages + d.failedMessages }}</b
+      ><span>{{ d.failedMessages }} failed (7d)</span>
+    </div>
+  </div>
+
+  <div class="dash-grid">
+    <div class="card">
+      <h3>Today — {{ d.today | prettyDate }}</h3>
+      @for (b of d.todayBookings; track b.id) {
+        <a class="job-row" [routerLink]="['../bookings']" [queryParams]="{ open: b.id }">
+          <span class="job-time">{{ b.slotStart | time12 }}</span>
+          <span class="job-main"
+            ><b>{{ b.customerName }}</b
+            ><small>{{ b.serviceName }} · {{ b.phone | phone }}</small></span
+          >
+          <span class="job-tech">{{ b.technicianName || '—' }}</span>
+          <span class="badge" [attr.data-status]="b.status">{{ labels[b.status] }}</span>
+        </a>
+      } @empty {
+        <p class="muted">No jobs scheduled today.</p>
+      }
+    </div>
+    <div class="card">
+      <h3>Next 7 days</h3>
+      <div class="bars">
+        @for (day of week(); track day.date) {
+          <div class="bar-col">
+            <span class="bar-val">{{ day.c }}</span>
+            <div class="bar" [style.height.%]="(day.c / maxDay()) * 100"></div>
+            <small>{{ day.label }}</small>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+} @else {
+  <p class="muted">Loading…</p>
+}

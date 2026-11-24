@@ -1,0 +1,92 @@
+<div class="page-head">
+  <h1>Services & prices</h1>
+  <button
+    class="btn btn-primary btn-sm"
+    (click)="
+      edit.set({
+        category: 'AC',
+        name: '',
+        description: '',
+        price: 0,
+        durationMin: 60,
+        active: true,
+        sortOrder: list().length,
+      })
+    "
+  >
+    <app-icon name="plus" [size]="16" /> Add service
+  </button>
+</div>
+
+@if (edit(); as e) {
+  <div class="card">
+    <h3>{{ e.id ? 'Edit service' : 'New service' }}</h3>
+    <div class="form-grid">
+      <label class="field"
+        ><span>Appliance</span>
+        <select [(ngModel)]="e.category">
+          @for (c of categories; track c) {
+            <option [value]="c">{{ labels[c] }}</option>
+          }
+        </select>
+      </label>
+      <label class="field"><span>Service name *</span><input [(ngModel)]="e.name" /></label>
+      <label class="field full"
+        ><span>Description</span><textarea rows="2" [(ngModel)]="e.description"></textarea>
+      </label>
+      <label class="field"
+        ><span>Starting price (₹)</span><input type="number" min="0" [(ngModel)]="e.price"
+      /></label>
+      <label class="field"
+        ><span>Display order</span><input type="number" [(ngModel)]="e.sortOrder"
+      /></label>
+      <label class="check full"
+        ><input type="checkbox" [(ngModel)]="e.active" /> Show on website</label
+      >
+    </div>
+    <div class="actions-end">
+      <button class="btn btn-ghost" (click)="edit.set(null)">Cancel</button>
+      <button class="btn btn-primary" (click)="save(e)">Save</button>
+    </div>
+  </div>
+}
+
+<div class="card table-card mt">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Appliance</th>
+        <th>Service</th>
+        <th>Price</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (s of list(); track s.id) {
+        <tr [class.dim]="!s.active">
+          <td>
+            <span class="tag">{{ labels[s.category] }}</span>
+          </td>
+          <td>
+            <b>{{ s.name }}</b><br /><small class="muted">{{ s.description }}</small>
+          </td>
+          <td>₹{{ s.price | number }}</td>
+          <td>
+            <span class="badge" [attr.data-status]="s.active ? 'confirmed' : 'cancelled'">{{
+              s.active ? 'Visible' : 'Hidden'
+            }}</span>
+          </td>
+          <td class="row-btns">
+            <button class="icon-btn sm" (click)="edit.set({ ...s })" aria-label="Edit">
+              <app-icon name="edit" [size]="16" />
+            </button>
+            <button class="icon-btn sm" (click)="remove(s)" aria-label="Delete">
+              <app-icon name="trash" [size]="16" />
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

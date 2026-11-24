@@ -1,0 +1,100 @@
+<div class="page-head"><h1>Settings</h1></div>
+
+@if (s(); as s) {
+  <div class="two-col">
+    <div class="card">
+      <h3>Business</h3>
+      <div class="form-grid">
+        <label class="field full"
+          ><span>Business name</span><input [(ngModel)]="s.business_name"
+        /></label>
+        <label class="field full"
+          ><span>Business WhatsApp number</span
+          ><input [(ngModel)]="s.business_whatsapp" inputmode="tel" />
+          <small class="muted"
+            >Used for the “WhatsApp us” buttons and new-booking alerts.</small
+          ></label
+        >
+      </div>
+
+      <h3 class="mt">WhatsApp follow-up timing</h3>
+      <div class="form-grid">
+        <label class="field"
+          ><span>Reminder before visit (hours)</span
+          ><input type="number" min="0" [(ngModel)]="s.reminder_hours_before" /><small class="muted"
+            >0 = off</small
+          ></label
+        >
+        <label class="field"
+          ><span>Feedback request after completion (hours)</span
+          ><input type="number" min="0" [(ngModel)]="s.feedback_delay_hours"
+        /></label>
+        <label class="field"
+          ><span>Next-service follow-up after (days)</span
+          ><input type="number" min="0" [(ngModel)]="s.followup_days" /><small class="muted"
+            >0 = off. e.g. 90 for AC servicing</small
+          ></label
+        >
+        <label class="check full"
+          ><input
+            type="checkbox"
+            [checked]="s.notify_admin_new_booking === '1'"
+            (change)="s.notify_admin_new_booking = flag($event)"
+          />
+          Send me a WhatsApp alert for every new booking</label
+        >
+        <label class="check full"
+          ><input
+            type="checkbox"
+            [checked]="s.notify_technician === '1'"
+            (change)="s.notify_technician = flag($event)"
+          />
+          Send job details to the technician on WhatsApp</label
+        >
+      </div>
+      <div class="actions-end">
+        <button class="btn btn-primary" (click)="save(s)">Save settings</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Admin login</h3>
+      <p class="muted small">
+        The admin panel is hidden — it is not linked anywhere on the website. Bookmark this address:
+      </p>
+      <code class="code-box">{{ adminUrl }}</code>
+      <p class="muted small">
+        To change the secret address, edit <code>ADMIN_PATH</code> in
+        <code>frontend/src/app/core/app-settings.ts</code>.
+      </p>
+
+      <h3 class="mt">Change password</h3>
+      <div class="form-grid">
+        <label class="field full"
+          ><span>Current password</span
+          ><input type="password" [(ngModel)]="pw.current" autocomplete="current-password"
+        /></label>
+        <label class="field full"
+          ><span>New password (min 10 characters, letters and numbers)</span
+          ><input type="password" [(ngModel)]="pw.next" autocomplete="new-password"
+        /></label>
+        <label class="field full"
+          ><span>Confirm new password</span
+          ><input type="password" [(ngModel)]="pw.confirm" autocomplete="new-password"
+        /></label>
+      </div>
+      <div class="actions-end">
+        <button
+          class="btn btn-primary"
+          [disabled]="!pw.current || pw.next.length < 10 || pw.next !== pw.confirm"
+          (click)="changePw()"
+        >
+          Update password
+        </button>
+      </div>
+      @if (pw.next && pw.confirm && pw.next !== pw.confirm) {
+        <p class="error small">Passwords do not match</p>
+      }
+    </div>
+  </div>
+}

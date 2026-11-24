@@ -1,0 +1,98 @@
+@switch (step()) {
+  @case ('phone') {
+    <form class="otp-form" (ngSubmit)="requestCode()">
+      <label class="field">
+        <span>WhatsApp mobile number</span>
+        <div class="phone-input">
+          <span class="cc">+91</span>
+          <input
+            name="phone"
+            [(ngModel)]="phone"
+            required
+            inputmode="tel"
+            autocomplete="tel"
+            placeholder="98765 43210"
+            maxlength="16"
+          />
+        </div>
+      </label>
+      <button class="btn btn-wa btn-block" [disabled]="busy() || !phoneLooksValid()">
+        <app-icon name="whatsapp" [size]="18" /> {{ busy() ? 'Please wait…' : submitLabel() }}
+      </button>
+      <p class="hint">Free — no SMS charges. Use the number you book with to see your orders.</p>
+    </form>
+  }
+
+  @case ('whatsapp') {
+    @if (start(); as s) {
+      <div class="wa-steps">
+        <p class="for">
+          Logging in as <b>{{ prettyPhone(s.phone) }}</b>
+        </p>
+        <ol>
+          <li><b>Tap “Open WhatsApp”</b> below.</li>
+          <li>A message is ready for us. <b>Tap Send</b> — don’t change it.</li>
+          <li>We reply with your <b>6-digit code</b> in a few seconds.</li>
+        </ol>
+        <a class="btn btn-wa btn-block btn-lg" [href]="s.waLink" target="_blank" rel="noopener">
+          <app-icon name="whatsapp" [size]="20" /> Open WhatsApp
+        </a>
+        <p class="waiting"><span class="dot"></span> Waiting for your WhatsApp message…</p>
+        <div class="row-links">
+          <button type="button" class="link-btn" (click)="goToCode()">I have the code</button>
+          <button type="button" class="link-btn" (click)="changeNumber()">Change number</button>
+        </div>
+        <p class="hint">
+          Send the message from WhatsApp on <b>{{ prettyPhone(s.phone) }}</b> — the code is only
+          sent to that number.
+        </p>
+      </div>
+    }
+  }
+
+  @case ('code') {
+    @if (start(); as s) {
+      <form class="otp-form" (ngSubmit)="verify()">
+        @if (s.devCode) {
+          <div class="notice warn">
+            <b>Test mode:</b> WhatsApp is not connected, so your code is shown here:
+            <b class="dev-code">{{ s.devCode }}</b>
+          </div>
+        } @else if (codeArrived()) {
+          <div class="notice ok">
+            <app-icon name="check" [size]="16" /> Code sent to your WhatsApp
+          </div>
+        }
+        <label class="field">
+          <span>Enter the 6-digit code for {{ prettyPhone(s.phone) }}</span>
+          <input
+            #codeInput
+            class="code-input"
+            name="code"
+            [(ngModel)]="code"
+            (ngModelChange)="onCodeInput()"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            maxlength="6"
+            placeholder="••••••"
+          />
+        </label>
+        <button class="btn btn-primary btn-block" [disabled]="busy() || code.length !== 6">
+          {{ busy() ? 'Checking…' : 'Verify & continue' }}
+        </button>
+        <div class="row-links">
+          @if (!s.devCode) {
+            <a class="link-btn" [href]="s.waLink" target="_blank" rel="noopener"
+              >Didn’t get it? Send again</a
+            >
+          }
+          <button type="button" class="link-btn" (click)="changeNumber()">Change number</button>
+        </div>
+      </form>
+    }
+  }
+}
+
+@if (error()) {
+  <p class="error">{{ error() }}</p>
+}

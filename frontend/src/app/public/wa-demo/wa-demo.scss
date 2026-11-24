@@ -1,0 +1,192 @@
+@use 'breakpoints' as bp;
+
+// Phone mockup with a WhatsApp chat that types itself out.
+.phone {
+  position: relative;
+  width: 300px;
+  height: 580px;
+  border-radius: 44px;
+  background: var(--theme-black);
+  padding: 12px;
+  box-shadow:
+    0 40px 80px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 2px var(--theme-black-4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: bob 6s ease-in-out infinite;
+}
+.phone-notch {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 96px;
+  height: 24px;
+  border-radius: 14px;
+  background: var(--theme-black);
+  z-index: 3;
+}
+
+.wa-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #075e54;
+  color: var(--theme-white);
+  padding: 40px 14px 12px;
+  border-radius: 32px 32px 0 0;
+}
+.wa-av {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--theme-gradient);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.wa-name {
+  flex: 1;
+  line-height: 1.2;
+  overflow: hidden;
+}
+.wa-name b {
+  display: block;
+  font-size: 0.86rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wa-name small {
+  font-size: 0.72rem;
+  color: #c7f0e4;
+}
+
+.wa-body {
+  flex: 1;
+  background: #e9e2d8;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+  background-size: 14px 14px;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 6px;
+  overflow: hidden;
+}
+.wa-day {
+  align-self: center;
+  background: #d9f2fb;
+  color: #3b5563;
+  font-size: 0.68rem;
+  padding: 3px 10px;
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
+
+.bubble {
+  align-self: flex-start;
+  max-width: 82%;
+  background: var(--theme-white);
+  color: #111b21;
+  padding: 7px 10px 5px;
+  border-radius: 4px 12px 12px 12px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08);
+  animation: bubbleIn 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  flex-shrink: 0;
+}
+.bubble.me {
+  align-self: flex-end;
+  background: #d9fdd3;
+  border-radius: 12px 4px 12px 12px;
+}
+.bubble-text {
+  white-space: pre-line;
+  display: block;
+}
+.bubble-time {
+  display: block;
+  text-align: right;
+  font-size: 0.62rem;
+  color: #667781;
+  margin-top: 2px;
+}
+.ticks {
+  color: #53bdeb;
+  font-weight: 700;
+}
+@keyframes bubbleIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.92);
+  }
+}
+
+.bubble.typing {
+  display: inline-flex;
+  gap: 4px;
+  padding: 10px 12px;
+}
+.bubble.typing i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #8696a0;
+  animation: dot 1s infinite;
+}
+.bubble.typing i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.bubble.typing i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes dot {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.wa-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f0f2f5;
+  padding: 10px;
+  border-radius: 0 0 32px 32px;
+}
+.wa-input span:first-child {
+  flex: 1;
+  background: var(--theme-white);
+  border-radius: 18px;
+  padding: 8px 14px;
+  font-size: 0.78rem;
+  color: #8696a0;
+}
+.wa-send {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #00a884;
+  color: var(--theme-white);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@include bp.down(bp.$mobile) {
+  .phone {
+    width: 280px;
+    height: 540px;
+  }
+}

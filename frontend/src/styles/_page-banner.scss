@@ -1,0 +1,52 @@
+// Dark banner at the top of inner pages (Book, Track) and the card area that overlaps it.
+.page-banner {
+  position: relative;
+  overflow: hidden;
+  background: var(--theme-gradient-dark);
+  color: var(--theme-white);
+  padding: 44px 0 96px;
+}
+.page-banner::after {
+  content: '';
+  position: absolute;
+  width: 480px;
+  height: 480px;
+  right: -120px;
+  top: -220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(var(--theme-primary-light-rgb), 0.35), transparent 70%);
+}
+.page-banner h1 {
+  font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+  font-weight: 800;
+  position: relative;
+  margin-bottom: 6px;
+}
+.page-banner p {
+  color: var(--theme-on-dark-soft);
+  margin: 0;
+  position: relative;
+}
+.banner-points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 16px;
+  position: relative;
+}
+.banner-points span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--theme-on-dark-soft);
+  font-size: 0.9rem;
+}
+.banner-points app-icon {
+  color: var(--theme-primary-light);
+}
+.page-body {
+  position: relative;
+  z-index: 2;
+  margin-top: -64px;
+  padding-bottom: 80px;
+}

@@ -1,0 +1,107 @@
+// =============================================================================
+//  THEME — Dodger Blue + Black
+//  Every colour in the app comes from these --theme-* variables.
+//  To re-brand, change the values here only.
+// =============================================================================
+:root {
+  // ---------- Primary: Dodger Blue ----------
+  --theme-primary: #1e90ff; // Dodger Blue
+  --theme-primary-rgb: 30, 144, 255; // use as rgba(var(--theme-primary-rgb), 0.3)
+  --theme-primary-dark: #0a6fd6;
+  --theme-primary-darker: #07539f;
+  --theme-primary-light: #5cb0ff;
+  --theme-primary-light-rgb: 92, 176, 255;
+  --theme-primary-300: #8cc6ff;
+  --theme-primary-200: #bfdfff;
+  --theme-primary-100: #dcedff;
+  --theme-primary-50: #eff7ff;
+  --theme-primary-soft: #e8f3ff; // light background for pills, active items
+
+  // ---------- Black ----------
+  --theme-black: #000000;
+  --theme-black-rgb: 0, 0, 0;
+  --theme-black-2: #0b0b0b;
+  --theme-black-3: #161616;
+  --theme-black-4: #262626;
+  --theme-white: #ffffff;
+
+  // ---------- Gradients ----------
+  --theme-gradient: linear-gradient(
+    135deg,
+    #3aa0ff 0%,
+    #1e90ff 45%,
+    #0a6fd6 100%
+  ); // buttons, highlights
+  --theme-gradient-accent: linear-gradient(135deg, #1e90ff 0%, #00bfff 100%); // main call-to-action
+  --theme-gradient-dark: linear-gradient(
+    135deg,
+    #000000 0%,
+    #0b0b0b 55%,
+    #0a2a4a 100%
+  ); // hero, banners
+  --theme-gradient-sidebar: linear-gradient(180deg, #000000 0%, #0d0d0d 100%); // admin sidebar
+
+  // ---------- Accent (call-to-action) ----------
+  --theme-accent: #1e90ff;
+  --theme-accent-rgb: 30, 144, 255;
+  --theme-accent-soft: #e8f3ff;
+
+  // ---------- Text & surfaces (light areas) ----------
+  --theme-text: #0a0a0a;
+  --theme-text-2: #3d3d3d;
+  --theme-muted: #6e6e73;
+  --theme-border: #e4e6eb;
+  --theme-bg: #f5f7fa;
+  --theme-surface: #ffffff;
+
+  // ---------- Text on dark (black) areas ----------
+  --theme-on-dark: #ffffff;
+  --theme-on-dark-soft: #d4d8de;
+  --theme-on-dark-muted: #9aa0a8;
+
+  // ---------- Neutral greys ----------
+  --theme-gray-50: #f7f8fa;
+  --theme-gray-100: #eef0f3;
+  --theme-gray-200: #e2e5ea;
+  --theme-gray-300: #c9ced6;
+  --theme-gray-400: #a1a7b0;
+
+  // ---------- Status ----------
+  --theme-success: #15803d;
+  --theme-success-rgb: 21, 128, 61;
+  --theme-success-dark: #166534;
+  --theme-success-light: #22c55e;
+  --theme-success-soft: #e7f8ee;
+  --theme-success-border: #c4ead2;
+  --theme-warning: #b45309;
+  --theme-warning-dark: #7a3e00;
+  --theme-warning-soft: #fff4e5;
+  --theme-warning-border: #f7d7a8;
+  --theme-danger: #c62828;
+  --theme-danger-soft: #fdecec;
+  --theme-danger-border: #f3c2c2;
+  --theme-star: #fbbf24;
+
+  // ---------- WhatsApp (keep green: it is WhatsApp's own brand colour) ----------
+  --theme-whatsapp: #25d366;
+  --theme-whatsapp-rgb: 37, 211, 102;
+  --theme-whatsapp-dark: #128c4b;
+
+  // ---------- Appliance categories ----------
+  --theme-cat-ac: #1e90ff;
+  --theme-cat-ac-bg: linear-gradient(135deg, #dcedff, #eff7ff);
+  --theme-cat-fridge: #0083c9;
+  --theme-cat-fridge-bg: linear-gradient(135deg, #d6f1ff, #eefaff);
+  --theme-cat-washer: #111111;
+  --theme-cat-washer-bg: linear-gradient(135deg, #e2e5ea, #f5f6f8);
+
+  // ---------- Shape, depth & type ----------
+  --theme-radius: 16px;
+  --theme-radius-lg: 24px;
+  --theme-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --theme-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.07);
+  --theme-shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.16);
+  --theme-shadow-primary: 0 10px 30px rgba(30, 144, 255, 0.35);
+  --theme-font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --theme-font-display: 'Plus Jakarta Sans', var(--theme-font);
+}

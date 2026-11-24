@@ -1,0 +1,101 @@
+@use 'breakpoints' as bp;
+
+.login-wrap {
+  max-width: 880px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+.login-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.login-head {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.login-head h2 {
+  font-size: 1.25rem;
+  margin: 0 0 2px;
+}
+.login-head p {
+  margin: 0;
+}
+.login-mark {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--theme-gradient);
+  color: var(--theme-white);
+  box-shadow: var(--theme-shadow-primary);
+}
+.google-box.busy {
+  opacity: 0.6;
+  pointer-events: none;
+}
+.or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--theme-muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.or::before,
+.or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--theme-border);
+}
+.fine {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--theme-muted);
+  text-align: center;
+}
+.perks {
+  list-style: none;
+  // .page-body pulls content 64px up over the dark banner; start the list below it
+  margin: 88px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.perks li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--theme-text-2);
+  font-weight: 500;
+}
+.perks app-icon {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary);
+}
+
+@include bp.down(bp.$tablet) {
+  .login-wrap {
+    grid-template-columns: 1fr;
+    max-width: 520px;
+  }
+  .perks {
+    display: none;
+  }
+}

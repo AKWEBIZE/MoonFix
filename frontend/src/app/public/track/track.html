@@ -1,0 +1,109 @@
+<section class="page-banner">
+  <div class="container narrow">
+    <h1>Track your booking</h1>
+    <p>Enter your Booking ID and mobile number to see live status.</p>
+  </div>
+</section>
+<section class="page-body">
+  <div class="container narrow">
+    <div class="card elevated">
+      <form class="form-grid" (ngSubmit)="find()">
+        <label class="field">
+          <span>Booking ID</span>
+          <input
+            name="ref"
+            [(ngModel)]="ref"
+            required
+            placeholder="BKXXXXXX"
+            style="text-transform: uppercase"
+          />
+        </label>
+        <label class="field">
+          <span>Mobile number used for booking</span>
+          <input name="phone" [(ngModel)]="phone" required inputmode="tel" />
+        </label>
+        <div class="full actions-end">
+          <button class="btn btn-primary" [disabled]="loading() || !ref || !phone">
+            <app-icon name="search" [size]="18" /> {{ loading() ? 'Searching…' : 'Find booking' }}
+          </button>
+        </div>
+      </form>
+      @if (error()) {
+        <p class="error">{{ error() }}</p>
+      }
+    </div>
+
+    @if (booking(); as b) {
+      <div class="card elevated mt">
+        <div class="track-head">
+          <div>
+            <small class="muted">Booking ID</small>
+            <h3>{{ b.ref }}</h3>
+          </div>
+          <span class="badge live-badge" [attr.data-status]="b.status">
+            @if (b.status !== 'cancelled' && b.status !== 'completed') {
+              <i class="live-dot"></i>
+            }
+            {{ statusLabels[b.status] }}</span
+          >
+        </div>
+        @if (b.status !== 'cancelled') {
+          @if (b.status === 'in_progress') {
+            <div class="track-road" aria-hidden="true">
+              <span class="ns-van"><app-icon name="tool" [size]="14" /></span
+              ><span class="track-home"><app-icon name="home" [size]="16" /></span>
+            </div>
+          }
+          <ol class="timeline">
+            @for (t of timeline; track t.key; let i = $index) {
+              <li [class.done]="i <= progress()" [class.current]="i === progress()" [style.--i]="i">
+                <span></span>{{ t.label }}
+              </li>
+            }
+          </ol>
+        }
+        <dl class="summary">
+          <div>
+            <dt>Service</dt>
+            <dd>{{ b.serviceName }}</dd>
+          </div>
+          <div>
+            <dt>Date</dt>
+            <dd>{{ b.date | prettyDate }}</dd>
+          </div>
+          <div>
+            <dt>Time</dt>
+            <dd>{{ b.slotStart | time12 }} – {{ b.slotEnd | time12 }}</dd>
+          </div>
+          <div>
+            <dt>Address</dt>
+            <dd>{{ b.address }}</dd>
+          </div>
+          @if (b.technicianName) {
+            <div>
+              <dt>Technician</dt>
+              <dd>{{ b.technicianName }}</dd>
+            </div>
+          }
+        </dl>
+        <div class="row-actions">
+          <a
+            class="btn btn-wa"
+            [href]="site.waLink('Hi, I need help with booking ' + b.ref)"
+            target="_blank"
+            rel="noopener"
+            ><app-icon name="whatsapp" /> Need help?</a
+          >
+          @if (b.status === 'pending' || b.status === 'confirmed') {
+            <button class="btn btn-danger-outline" [disabled]="loading()" (click)="cancel()">
+              Cancel booking
+            </button>
+          }
+          @if (b.status === 'completed' || b.status === 'cancelled') {
+            <a class="btn btn-primary" routerLink="/book">Book again</a>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</section>

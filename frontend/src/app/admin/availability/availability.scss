@@ -1,0 +1,136 @@
+// ---------- Toolbar ----------
+.grid-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.date-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.date-nav input {
+  width: auto;
+}
+
+// ---------- Technician x time-slot grid ----------
+.table-scroll {
+  overflow-x: auto;
+}
+.avail-grid {
+  border-collapse: separate;
+  border-spacing: 5px;
+  width: 100%;
+  min-width: 640px;
+}
+.avail-grid th {
+  font-size: 0.8rem;
+  color: var(--theme-text-2);
+  font-weight: 700;
+  padding: 4px;
+  white-space: nowrap;
+}
+.avail-grid th small {
+  color: var(--theme-muted);
+  font-weight: 500;
+}
+.tech-cell {
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 4px;
+}
+.tech-cell small {
+  color: var(--theme-muted);
+  font-size: 0.75rem;
+}
+
+.cell {
+  width: 100%;
+  min-height: 56px;
+  border-radius: 11px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 4px;
+  line-height: 1.25;
+  transition: all 0.15s;
+}
+.cell small {
+  font-weight: 400;
+  font-size: 0.7rem;
+  opacity: 0.85;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 110px;
+}
+.cell[data-state='free'] {
+  background: var(--theme-success-soft);
+  color: var(--theme-success);
+  border-color: var(--theme-success-border);
+}
+.cell[data-state='free']:hover {
+  background: var(--theme-danger-soft);
+  color: var(--theme-danger);
+  border-color: var(--theme-danger-border);
+}
+.cell[data-state='free']:hover span {
+  visibility: hidden;
+  position: relative;
+}
+.cell[data-state='free']:hover span::after {
+  content: 'Mark unavailable';
+  visibility: visible;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.cell[data-state='leave'] {
+  background: var(--theme-danger-soft);
+  color: var(--theme-danger);
+  border-color: var(--theme-danger-border);
+}
+.cell[data-state='booked'] {
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary-dark);
+  border-color: var(--theme-primary-200);
+}
+.cell[data-state='weekly_off'] {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--theme-gray-50),
+    var(--theme-gray-50) 6px,
+    var(--theme-gray-200) 6px,
+    var(--theme-gray-200) 12px
+  );
+  color: var(--theme-muted);
+  cursor: default;
+}
+
+.legend {
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-weight: 600;
+}
+.legend.free {
+  background: var(--theme-success-soft);
+  color: var(--theme-success);
+}
+.legend.leave {
+  background: var(--theme-danger-soft);
+  color: var(--theme-danger);
+}
+.legend.booked {
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary-dark);
+}

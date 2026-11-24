@@ -1,0 +1,14 @@
+// Shared breakpoints.
+// Usage in any component .scss:
+//   @use 'breakpoints' as bp;
+//   @include bp.down(bp.$mobile) { ... }
+
+$tablet: 1024px; // layouts go single-column
+$menu: 960px; // site header collapses to the hamburger menu
+$mobile: 760px; // phones
+
+@mixin down($width) {
+  @media (max-width: $width) {
+    @content;
+  }
+}

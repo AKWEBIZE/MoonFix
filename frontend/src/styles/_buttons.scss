@@ -1,0 +1,149 @@
+// Buttons used across the whole site and admin panel.
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 20px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none !important;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    box-shadow 0.2s,
+    transform 0.15s;
+  white-space: nowrap;
+}
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-sm {
+  padding: 8px 14px;
+  font-size: 0.875rem;
+  border-radius: 10px;
+}
+.btn-xs {
+  padding: 5px 10px;
+  font-size: 0.8rem;
+  border-radius: 8px;
+}
+.btn-lg {
+  padding: 15px 28px;
+  font-size: 1.03rem;
+  border-radius: 14px;
+}
+.btn-block {
+  width: 100%;
+}
+.btn-primary {
+  background: var(--theme-gradient);
+  color: var(--theme-white);
+  box-shadow: var(--theme-shadow-primary);
+}
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 14px 34px rgba(var(--theme-primary-rgb), 0.4);
+}
+.btn-accent {
+  background: var(--theme-gradient-accent);
+  color: var(--theme-white);
+  box-shadow: 0 10px 28px rgba(var(--theme-accent-rgb), 0.35);
+}
+.btn-success {
+  background: var(--theme-success);
+  color: var(--theme-white);
+}
+.btn-wa {
+  background: var(--theme-whatsapp);
+  color: var(--theme-white);
+  box-shadow: 0 8px 22px rgba(var(--theme-whatsapp-rgb), 0.28);
+}
+.btn-wa:hover:not(:disabled) {
+  background: var(--theme-whatsapp-dark);
+}
+.btn-outline {
+  background: var(--theme-white);
+  border-color: var(--theme-border);
+  color: var(--theme-text);
+}
+.btn-outline:hover:not(:disabled) {
+  border-color: var(--theme-primary);
+  color: var(--theme-primary);
+}
+.btn-danger-outline {
+  background: var(--theme-white);
+  border-color: var(--theme-danger-border);
+  color: var(--theme-danger);
+}
+.btn-danger-outline:hover:not(:disabled) {
+  background: var(--theme-danger-soft);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--theme-text-2);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--theme-gray-100);
+}
+.btn-light {
+  background: var(--theme-white);
+  color: var(--theme-primary-dark);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+.btn-glass {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--theme-white);
+  border-color: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(6px);
+}
+.btn-glass:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+}
+.btn-ghost-light {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--theme-white);
+}
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--theme-primary);
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.link-btn:hover {
+  text-decoration: underline;
+}
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--theme-border);
+  background: var(--theme-white);
+  cursor: pointer;
+  color: var(--theme-text-2);
+  transition: all 0.15s;
+}
+.icon-btn:hover {
+  border-color: var(--theme-primary);
+  color: var(--theme-primary);
+}
+.icon-btn.sm {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+}
