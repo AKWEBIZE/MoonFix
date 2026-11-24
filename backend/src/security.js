@@ -56,7 +56,8 @@ export async function checkStartupSafety() {
   if (!problems.length) return;
   if (config.isProduction) {
     console.error('\n[security] The server will not start until these are fixed:\n  - ' + problems.join('\n  - ') + '\n');
-    process.exit(1);
+    // The app is not running while this is shown, so listing the settings exposes nothing usable.
+    throw Object.assign(new Error('Unsafe settings for a live server'), { code: 'UNSAFE_SETTINGS', details: problems });
   }
   console.warn('[security] Fine for local testing, but fix before going live:\n  - ' + problems.join('\n  - '));
 }

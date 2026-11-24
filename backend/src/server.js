@@ -1,88 +1,38 @@
-import express from 'express';
-import cors from 'cors';
-import path from 'node:path';
-import fs from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { config, HttpError } from './util.js';
-import './db.js';
-import publicRoutes from './routes/public.js';
-import adminRoutes from './routes/admin.js';
-import customerRoutes from './routes/customer.js';
-import whatsappWebhook from './routes/whatsappWebhook.js';
-import { otpMode } from './customerAuth.js';
-import { checkStartupSafety, securityHeaders } from './security.js';
-import { startScheduler } from './scheduler.js';
-import { whatsappProvider } from './whatsapp.js';
+/**
+ * Entry file (Hostinger: src/server.js).
+ *
+ * Starts the real app (app.js). If it cannot start - for example the MySQL settings are wrong -
+ * a tiny fallback server answers every request with a short, safe reason instead of the host's
+ * blank "503 Service Unavailable", so the problem can be seen from the browser.
+ * Passwords, user names and host names are never shown; the full details are in the server log.
+ */
+import http from 'node:http';
 
-await checkStartupSafety(); // a live server (NODE_ENV=production) stops here if settings are unsafe
+const HINTS = {
+  ER_ACCESS_DENIED_ERROR: 'MySQL refused the login. Check DB_USER and DB_PASSWORD (full names, e.g. u123456_moonfix).',
+  ER_DBACCESS_DENIED_ERROR: 'This MySQL user has no access to the database. Check that DB_USER belongs to DB_NAME in hPanel.',
+  ER_BAD_DB_ERROR: 'Database not found. Check DB_NAME (full name, e.g. u123456_moonfix).',
+  ENOTFOUND: 'MySQL host not found. Check DB_HOST (use the "MySQL host" shown in hPanel > Databases).',
+  EAI_AGAIN: 'MySQL host not found. Check DB_HOST (use the "MySQL host" shown in hPanel > Databases).',
+  ECONNREFUSED: 'MySQL is not accepting connections at that address. Check DB_HOST and DB_PORT.',
+  ETIMEDOUT: 'Timed out reaching MySQL. Check DB_HOST and DB_PORT.',
+  UNSAFE_SETTINGS: 'Live-mode safety check failed. Fix the settings listed below.',
+};
 
-const app = express();
-// Only trust X-Forwarded-For when a known proxy (e.g. Nginx) is in front. See TRUST_PROXY in .env.
-app.set('trust proxy', config.trustProxy);
-app.disable('x-powered-by');
-app.use(securityHeaders());
-app.use(cors({ origin: config.corsOrigins }));
-app.use(express.json({
-  limit: '100kb',
-  // Keep the raw bytes for the WhatsApp webhook, to check Meta's signature
-  verify: (req, _res, buf) => { if (req.originalUrl.startsWith('/api/whatsapp/webhook')) req.rawBody = buf; },
-}));
-
-app.get('/api/health', (_req, res) => res.json({ ok: true }));
-app.use('/api/public', publicRoutes);
-app.use('/api/customer', (_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); }, customerRoutes);
-app.use('/api/whatsapp/webhook', whatsappWebhook);
-app.use('/api/admin', (_req, res, next) => {
-  // Keep admin API out of search engines and caches
-  res.set('X-Robots-Tag', 'noindex, nofollow');
-  res.set('Cache-Control', 'no-store');
-  next();
-}, adminRoutes);
-
-app.use('/api', (_req, _res, next) => next(new HttpError(404, 'Not found')));
-
-// Serve the built Angular website from the same server.
-// `ng build` (in frontend/) writes it to backend/public, so the backend folder alone is a complete
-// deployable app (Hostinger: root directory "backend", no build command, entry file src/server.js).
-// WEB_DIR can point somewhere else if needed.
-const here = path.dirname(fileURLToPath(import.meta.url));
-const webCandidates = [
-  process.env.WEB_DIR,
-  path.join(here, '../public'),
-  path.join(here, '../../frontend/dist/frontend/browser'), // older build location
-].filter(Boolean).map((p) => path.resolve(p));
-const webDir = webCandidates.find((p) => fs.existsSync(path.join(p, 'index.html'))) || webCandidates[0];
-if (fs.existsSync(path.join(webDir, 'index.html'))) {
-  // Hashed JS/CSS files can be cached for a long time; index.html must always be fresh after a deploy
-  app.use(express.static(webDir, {
-    index: false,
-    maxAge: '30d',
-    setHeaders: (res, file) => { if (file.endsWith('.html')) res.set('Cache-Control', 'no-cache'); },
-  }));
-  app.get(/^(?!\/api).*/, (_req, res) => {
-    res.set('Cache-Control', 'no-cache');
-    res.sendFile(path.join(webDir, 'index.html'));
-  });
-  console.log(`[web] Serving Angular build from ${webDir}`);
-} else {
-  console.warn(`[web] Website build not found at ${webDir} - run "npm run build" in the frontend folder (or the project root), then commit backend/public.`);
-  app.get(/^(?!\/api).*/, (_req, res) =>
-    res.status(503).type('text').send('The website files have not been built yet. Run "npm run build" in the frontend folder, then deploy again.'),
-  );
+try {
+  await import('./app.js');
+} catch (e) {
+  const code = String(e?.code || 'STARTUP_FAILED').replace(/[^A-Z0-9_]/gi, '').slice(0, 40);
+  console.error('[startup] The app could not start:', e);
+  const body = JSON.stringify({
+    message: 'The server could not start.',
+    code,
+    hint: HINTS[code] || 'See the server log for details.',
+    ...(code === 'UNSAFE_SETTINGS' && Array.isArray(e.details) ? { settingsToFix: e.details } : {}),
+    fix: 'Correct the setting in the hosting panel, then restart or redeploy the app.',
+  }, null, 2);
+  http.createServer((_req, res) => {
+    res.writeHead(503, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' });
+    res.end(body);
+  }).listen(Number(process.env.PORT) || 4000, () => console.error(`[startup] Fallback server is showing the error code ${code}`));
 }
-
-// eslint-disable-next-line no-unused-vars
-app.use((err, _req, res, _next) => {
-  const status = err.status || (err.type === 'entity.parse.failed' ? 400 : 500);
-  // Our own HttpErrors carry a message meant for the user; hide anything unexpected.
-  const expected = err instanceof HttpError;
-  if (status >= 500 && !expected) console.error(err);
-  res.status(status).json({ message: status >= 500 && !expected ? 'Something went wrong. Please try again.' : err.message });
-});
-
-app.listen(config.port, () => {
-  console.log(`[api] Listening on http://localhost:${config.port}  (WhatsApp provider: ${whatsappProvider})`);
-  const mode = otpMode();
-  console.log(`[login] Customer WhatsApp OTP: ${mode}  |  Google sign-in: ${config.googleClientId ? 'on' : 'off (set GOOGLE_CLIENT_ID)'}`);
-  startScheduler();
-});

@@ -64,7 +64,8 @@ if (dialect === 'mysql') {
     await pool.query('SELECT 1');
   } catch (e) {
     console.error(`[db] Cannot connect to MySQL at ${config.db.host}:${config.db.port} (database "${config.db.name}", user "${config.db.user}"): ${e.message}`);
-    process.exit(1);
+    await pool.end().catch(() => {});
+    throw e; // server.js shows the error code on the website
   }
   console.log(`[db] MySQL: ${config.db.user}@${config.db.host}:${config.db.port}/${config.db.name}`);
   engine = {
