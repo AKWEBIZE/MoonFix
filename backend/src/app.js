@@ -80,9 +80,12 @@ app.use((err, _req, res, _next) => {
   res.status(status).json({ message: status >= 500 && !expected ? 'Something went wrong. Please try again.' : err.message });
 });
 
-app.listen(config.port, () => {
-  console.log(`[api] Listening on http://localhost:${config.port}  (WhatsApp provider: ${whatsappProvider})`);
-  const mode = otpMode();
-  console.log(`[login] Customer WhatsApp OTP: ${mode}  |  Google sign-in: ${config.googleClientId ? 'on' : 'off (set GOOGLE_CLIENT_ID)'}`);
+// server.js owns the HTTP server (it starts listening before the database is ready)
+// and hands requests to this app once loading has finished.
+export default app;
+
+export function onReady() {
+  console.log(`[api] Ready  (WhatsApp provider: ${whatsappProvider})`);
+  console.log(`[login] Customer WhatsApp OTP: ${otpMode()}  |  Google sign-in: ${config.googleClientId ? 'on' : 'off (set GOOGLE_CLIENT_ID)'}`);
   startScheduler();
-});
+}

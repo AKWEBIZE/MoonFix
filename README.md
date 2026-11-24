@@ -223,7 +223,8 @@ The Node server serves the website (from `backend/public`) and the API together 
 
 ```
 backend/src/
-  server.js          Express app, serves API + Angular build
+  server.js          Entry file: listens at once, shows startup status/errors, then loads app.js
+  app.js             Express app, serves API + Angular build
   db.js              Database layer (MySQL or SQLite), schema, settings, first-run seed data
   availability.js    Slot / technician availability rules
   bookings.js        Create / update bookings, auto-assign technician

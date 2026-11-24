@@ -1,10 +1,14 @@
 /**
  * Entry file (Hostinger: src/server.js).
  *
- * Starts the real app (app.js). If it cannot start - for example the MySQL settings are wrong -
- * a tiny fallback server answers every request with a short, safe reason instead of the host's
- * blank "503 Service Unavailable", so the problem can be seen from the browser.
+ * Starts listening at once, then loads the real app (app.js: database, routes, website).
+ * Until it is ready, every request gets a short status instead of the host's blank 503:
+ *   - "starting"  while the database connects and the tables are prepared
+ *   - an error code + hint if loading failed (for example wrong MySQL settings)
  * Passwords, user names and host names are never shown; the full details are in the server log.
+ *
+ * No top-level await in this file: Hostinger (LiteSpeed) loads the entry file with require(),
+ * which cannot load a module that uses top-level await. import() below has no such limit.
  */
 import http from 'node:http';
 
@@ -19,20 +23,42 @@ const HINTS = {
   UNSAFE_SETTINGS: 'Live-mode safety check failed. Fix the settings listed below.',
 };
 
-// No top-level await in this file: Hostinger (LiteSpeed) loads the entry file with require(),
-// which cannot load a module that uses top-level await. import() below has no such limit.
-import('./app.js').catch((e) => {
-  const code = String(e?.code || 'STARTUP_FAILED').replace(/[^A-Z0-9_]/gi, '').slice(0, 40);
-  console.error('[startup] The app could not start:', e);
-  const body = JSON.stringify({
-    message: 'The server could not start.',
-    code,
-    hint: HINTS[code] || 'See the server log for details.',
-    ...(code === 'UNSAFE_SETTINGS' && Array.isArray(e.details) ? { settingsToFix: e.details } : {}),
-    fix: 'Correct the setting in the hosting panel, then restart or redeploy the app.',
-  }, null, 2);
-  http.createServer((_req, res) => {
-    res.writeHead(503, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' });
-    res.end(body);
-  }).listen(process.env.PORT || 4000, () => console.error(`[startup] Fallback server is showing the error code ${code}`));
-});
+const startedAt = Date.now();
+
+function sendStatus(res, data) {
+  res.writeHead(503, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' });
+  res.end(JSON.stringify(data, null, 2));
+}
+
+// Until app.js is ready, answer with "starting"
+let handler = (_req, res) => {
+  res.setHeader('retry-after', '5');
+  sendStatus(res, {
+    message: 'The server is starting. Please try again in a few seconds.',
+    code: 'STARTING',
+    secondsSinceStart: Math.round((Date.now() - startedAt) / 1000),
+  });
+};
+
+const server = http.createServer((req, res) => handler(req, res));
+server.listen(process.env.PORT || 4000, () => console.log(`[api] Listening on port ${process.env.PORT || 4000}, loading the app...`));
+
+import('./app.js').then(
+  ({ default: app, onReady }) => {
+    handler = app;
+    onReady();
+  },
+  (e) => {
+    const code = String(e?.code || 'STARTUP_FAILED').replace(/[^A-Z0-9_]/gi, '').slice(0, 40);
+    console.error('[startup] The app could not start:', e);
+    const body = {
+      message: 'The server could not start.',
+      code,
+      hint: HINTS[code] || 'See the server log for details.',
+      ...(code === 'UNSAFE_SETTINGS' && Array.isArray(e.details) ? { settingsToFix: e.details } : {}),
+      fix: 'Correct the setting in the hosting panel, then restart or redeploy the app.',
+    };
+    handler = (_req, res) => sendStatus(res, body);
+    console.error(`[startup] Showing the error code ${code} to visitors`);
+  },
+);
