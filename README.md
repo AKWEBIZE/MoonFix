@@ -158,22 +158,28 @@ npm start
 
 ## Production
 
-From the project root (this is also what hosts like Hostinger run):
+The Angular build (`npm run build` in `frontend/`) writes the finished website into **`backend/public`**, and that
+folder is committed to git. So the `backend` folder on its own is a complete app: the website plus the API.
+
+**Before pushing website changes**, rebuild it and commit the result:
 
 ```powershell
-npm install
-npm run build   # installs the backend, then installs and builds the Angular frontend
-npm start       # starts the backend, which serves the website and the API
+cd frontend; npm run build
+cd ..; git add -A; git commit -m "Update website"; git push origin main main:Prod
 ```
 
-On Hostinger (Node.js app from Git):
-- Root directory: the repo root
-- Build command: `npm run build`
-- Start command: `npm start`
+On Hostinger (Node.js app from Git, branch `Prod`):
+- Root directory: `backend`
+- Build command: none
+- Entry file: `src/server.js`
 - Node.js version: 22 or newer
-- Put the settings from `backend/.env.example` into the panel's environment variables.
+- Put the settings from `backend/.env.example` into the panel's environment variables, plus
+  `DB_FILE=/home/<your-user>/moonfix-data/app.db`. Every deploy goes into a fresh folder, so the database must live
+  outside it.
 
-When `frontend/dist/frontend/browser` exists, the Node server serves the website and the API together on one port
+On a VPS you can instead run `npm install`, `npm run build` and `npm start` from the project root.
+
+The Node server serves the website (from `backend/public`) and the API together on one port
 (`PORT`, default 4000). Put it behind Nginx/IIS with HTTPS, set `CORS_ORIGINS`, a long random `JWT_SECRET`, and back up
 `backend/data/app.db`.
 

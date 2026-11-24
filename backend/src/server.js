@@ -41,10 +41,17 @@ app.use('/api/admin', (_req, res, next) => {
 
 app.use('/api', (_req, _res, next) => next(new HttpError(404, 'Not found')));
 
-// Serve the built Angular website from the same server (run `npm run build` in the repo root first).
-// WEB_DIR can point somewhere else if your host puts the build in another folder.
+// Serve the built Angular website from the same server.
+// `ng build` (in frontend/) writes it to backend/public, so the backend folder alone is a complete
+// deployable app (Hostinger: root directory "backend", no build command, entry file src/server.js).
+// WEB_DIR can point somewhere else if needed.
 const here = path.dirname(fileURLToPath(import.meta.url));
-const webDir = path.resolve(process.env.WEB_DIR || path.join(here, '../../frontend/dist/frontend/browser'));
+const webCandidates = [
+  process.env.WEB_DIR,
+  path.join(here, '../public'),
+  path.join(here, '../../frontend/dist/frontend/browser'), // older build location
+].filter(Boolean).map((p) => path.resolve(p));
+const webDir = webCandidates.find((p) => fs.existsSync(path.join(p, 'index.html'))) || webCandidates[0];
 if (fs.existsSync(path.join(webDir, 'index.html'))) {
   // Hashed JS/CSS files can be cached for a long time; index.html must always be fresh after a deploy
   app.use(express.static(webDir, {
@@ -58,9 +65,9 @@ if (fs.existsSync(path.join(webDir, 'index.html'))) {
   });
   console.log(`[web] Serving Angular build from ${webDir}`);
 } else {
-  console.warn(`[web] Website build not found at ${webDir} - run "npm run build" in the project root.`);
+  console.warn(`[web] Website build not found at ${webDir} - run "npm run build" in the frontend folder (or the project root), then commit backend/public.`);
   app.get(/^(?!\/api).*/, (_req, res) =>
-    res.status(503).type('text').send('The website files have not been built yet. Run "npm run build" in the project root, then restart.'),
+    res.status(503).type('text').send('The website files have not been built yet. Run "npm run build" in the frontend folder, then deploy again.'),
   );
 }
 

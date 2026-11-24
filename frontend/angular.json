@@ -37,6 +37,10 @@
               "includePaths": [
                 "src/styles"
               ]
+            },
+            "outputPath": {
+              "base": "../backend/public",
+              "browser": ""
             }
           },
           "configurations": {
