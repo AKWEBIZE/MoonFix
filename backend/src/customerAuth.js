@@ -115,7 +115,8 @@ export async function handleInboundMessage(fromRaw, text = '') {
   const s = getSettings();
 
   if (!req) {
-    if (!/login|code|otp/i.test(text)) return false; // not about logging in: leave it for staff
+    // Only clear login requests get the automatic help ("error code E1" must reach staff)
+    if (!/\blog ?in\b|\botp\b/i.test(text)) return false; // not about logging in: leave it for staff
     await sendMessage({
       recipientType: 'customer', phone, kind: 'login_help', forceText: true,
       body: `Hi! To log in to *${s.business_name}*, open our website, tap *Login*, enter this WhatsApp number ` +

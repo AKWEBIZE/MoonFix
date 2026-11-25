@@ -6,7 +6,7 @@ import { buildReport } from '../reports.js';
 import { CATEGORIES, db, getSettings, updateSettings } from '../db.js';
 import { availabilityGrid, freeTechnicians } from '../availability.js';
 import { getBooking, listBookings, STATUSES, updateBooking } from '../bookings.js';
-import { KIND_LABELS, notify, sendMessage, TEMPLATES, waLink, whatsappProvider } from '../whatsapp.js';
+import { KIND_LABELS, notify, resendMessage, TEMPLATES, waLink, whatsappProvider } from '../whatsapp.js';
 import {
   addDays, hashPassword, HttpError, isDateStr, isTimeStr, isValidPhone, normalizePhone, ok, str, todayStr, verifyPassword,
 } from '../util.js';
@@ -284,6 +284,11 @@ r.get('/settings', async (_req, res) => ok(res, getSettings()));
 r.put('/settings', async (req, res) => {
   const body = { ...(req.body || {}) };
   if (body.business_whatsapp != null) body.business_whatsapp = normalizePhone(body.business_whatsapp);
+  if (body.admin_alert_whatsapp != null) {
+    const v = String(body.admin_alert_whatsapp).trim();
+    if (v && !isValidPhone(v)) throw new HttpError(400, 'Enter a valid WhatsApp number for new-booking alerts');
+    body.admin_alert_whatsapp = v ? normalizePhone(v) : '';
+  }
   for (const k of ['booking_window_days', 'min_lead_minutes', 'reminder_hours_before', 'feedback_delay_hours', 'followup_days']) {
     if (body[k] != null && !(Number(body[k]) >= 0)) throw new HttpError(400, `${k} must be a positive number`);
   }
@@ -295,14 +300,17 @@ function msgDto(m) {
   return {
     id: m.id, bookingId: m.booking_id, bookingRef: m.booking_ref, recipientType: m.recipient_type, phone: m.phone,
     kind: m.kind, kindLabel: KIND_LABELS[m.kind] || m.kind, body: m.body, status: m.status, provider: m.provider,
-    error: m.error, createdAt: m.created_at, link: waLink(m.phone, m.body),
+    error: m.error, createdAt: m.created_at,
+    // Customer messages: open a chat to reply; others: the text ready to send by hand
+    link: m.kind === 'inbound' ? waLink(m.phone) : waLink(m.phone, m.body),
   };
 }
 
 r.get('/messages', async (req, res) => {
   const where = [];
   const params = [];
-  if (req.query.status) { where.push('m.status = ?'); params.push(req.query.status); }
+  if (req.query.status === 'sent') where.push("m.status IN ('sent','delivered','read')"); // anything that left us
+  else if (req.query.status) { where.push('m.status = ?'); params.push(req.query.status); }
   if (req.query.kind) { where.push('m.kind = ?'); params.push(req.query.kind); }
   const rows = await db.prepare(`SELECT m.*, b.ref AS booking_ref FROM whatsapp_messages m LEFT JOIN bookings b ON b.id = m.booking_id
                            ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY m.id DESC LIMIT 300`).all(...params);
@@ -312,7 +320,8 @@ r.get('/messages', async (req, res) => {
 r.post('/messages/:id/resend', async (req, res) => {
   const m = await db.prepare('SELECT * FROM whatsapp_messages WHERE id = ?').get(Number(req.params.id));
   if (!m) throw new HttpError(404, 'Message not found');
-  ok(res, await sendMessage({ bookingId: m.booking_id, recipientType: m.recipient_type, phone: m.phone, kind: m.kind, body: m.body }));
+  if (m.kind === 'inbound') throw new HttpError(400, 'This is a message from a customer');
+  ok(res, await resendMessage(m));
 });
 
 r.post('/messages/:id/mark-sent', async (req, res) => {

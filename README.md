@@ -60,8 +60,10 @@ Delivery modes (`WHATSAPP_PROVIDER` in `backend/.env`):
 - **`none`** (default, free): messages are prepared and logged. In the admin panel, click **Send**:
   WhatsApp opens with the text pre-filled, and you send it from the business phone.
 - **`cloud`**: [Meta WhatsApp Cloud API](https://developers.facebook.com/docs/whatsapp/cloud-api), fully automatic.
-  Meta only allows free-text messages within 24 hours of the customer's last message. For other messages set
-  `WA_CLOUD_USE_TEMPLATE=true` and create an approved template with one body variable `{{1}}`.
+  Each message type is sent with its own Meta-approved template (wording in `backend/src/waTemplates.js`;
+  submit them with `npm run wa:templates -- --create`). Delivery receipts (delivered / read / failed) and
+  customer replies arrive on the webhook and show in **WhatsApp follow-ups**.
+  **Step-by-step setup: [WHATSAPP_SETUP.md](WHATSAPP_SETUP.md).**
 - **`twilio`**: Twilio WhatsApp API, fully automatic.
 
 ---

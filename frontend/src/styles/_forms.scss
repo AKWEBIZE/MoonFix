@@ -178,9 +178,15 @@
   background: var(--theme-danger-soft);
   color: var(--theme-danger);
 }
-.badge[data-msg='sent'] {
+.badge[data-msg='sent'],
+.badge[data-msg='delivered'],
+.badge[data-msg='read'] {
   background: var(--theme-success-soft);
   color: var(--theme-success);
+}
+.badge[data-msg='received'] {
+  background: var(--theme-primary-soft);
+  color: var(--theme-primary);
 }
 .badge[data-msg='manual'] {
   background: var(--theme-warning-soft);

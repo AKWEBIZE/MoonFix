@@ -211,7 +211,8 @@ export interface WaMessage {
   kind: string;
   kindLabel: string;
   body: string;
-  status: 'sent' | 'failed' | 'manual';
+  /** received = a message the customer sent us (kind "inbound") */
+  status: 'manual' | 'sent' | 'delivered' | 'read' | 'failed' | 'received';
   provider: string;
   error: string | null;
   createdAt: string;
@@ -285,6 +286,7 @@ export interface Settings {
   feedback_delay_hours: string;
   followup_days: string;
   notify_admin_new_booking: string;
+  admin_alert_whatsapp: string;
   notify_technician: string;
 }
 

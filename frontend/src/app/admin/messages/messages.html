@@ -11,8 +11,12 @@
   and a <b>periodic service follow-up</b>. Timings are set in
   <a routerLink="../settings">Settings</a>.
   @if (provider() === 'none') {
-    <br />Manual mode: messages marked <span class="badge" data-msg="manual">manual</span> are ready
+    <br />Manual mode: messages marked <span class="badge" data-msg="manual">to send</span> are ready
     — click <b>Send</b> to open WhatsApp with the text pre-filled.
+  } @else {
+    <br />Sent automatically through the WhatsApp API: <span class="badge" data-msg="delivered">delivered ✓✓</span>
+    and <span class="badge" data-msg="read">read ✓✓</span> update by themselves. Replies from customers appear under
+    <b>Customer messages</b>.
   }
 </div>
 
@@ -28,16 +32,16 @@
 
 <div class="msg-list">
   @for (m of list(); track m.id) {
-    <div class="msg card">
+    <div class="msg card" [class.inbound]="m.kind === 'inbound'">
       <div class="msg-head">
         <b>{{ m.kindLabel }}</b>
-        <span>→ {{ m.recipientType }} {{ m.phone | phone }}</span>
+        <span>{{ m.kind === 'inbound' ? '← from' : '→' }} {{ m.recipientType }} {{ m.phone | phone }}</span>
         @if (m.bookingRef) {
           <a [routerLink]="['../bookings']" [queryParams]="{ open: m.bookingId }">{{
             m.bookingRef
           }}</a>
         }
-        <span class="badge" [attr.data-msg]="m.status">{{ m.status }}</span>
+        <span class="badge" [attr.data-msg]="m.status">{{ statusLabels[m.status] || m.status }}</span>
         <small class="muted">{{ m.createdAt | date: 'd MMM, h:mm a' }}</small>
       </div>
       <pre>{{ m.body }}</pre>
@@ -45,7 +49,11 @@
         <small class="error">{{ m.error }}</small>
       }
       <div class="row-btns">
-        @if (m.status !== 'sent') {
+        @if (m.kind === 'inbound') {
+          <a class="btn btn-wa btn-xs" [href]="m.link" target="_blank" rel="noopener"
+            ><app-icon name="whatsapp" [size]="14" /> Reply from my phone</a
+          >
+        } @else if (m.status === 'manual' || m.status === 'failed') {
           <a
             class="btn btn-wa btn-xs"
             [href]="m.link"

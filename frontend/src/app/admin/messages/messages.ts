@@ -22,10 +22,19 @@ export class MessagesPage {
   status = 'manual';
   filtersList = [
     { key: 'manual', label: 'To send' },
+    { key: 'received', label: 'Customer messages' },
     { key: 'failed', label: 'Failed' },
     { key: 'sent', label: 'Sent' },
     { key: '', label: 'All' },
   ];
+  statusLabels: Record<WaMessage['status'], string> = {
+    manual: 'to send',
+    sent: 'sent ✓',
+    delivered: 'delivered ✓✓',
+    read: 'read ✓✓',
+    failed: 'failed',
+    received: 'received',
+  };
 
   constructor() {
     this.api.me().subscribe((m) => {

@@ -9,7 +9,8 @@
   },
   "scripts": {
     "start": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning src/server.js",
-    "dev": "node --watch --env-file-if-exists=.env --disable-warning=ExperimentalWarning src/server.js"
+    "dev": "node --watch --env-file-if-exists=.env --disable-warning=ExperimentalWarning src/server.js",
+    "wa:templates": "node --env-file-if-exists=.env scripts/whatsapp-templates.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

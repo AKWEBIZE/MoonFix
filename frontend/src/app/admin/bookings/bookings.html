@@ -256,9 +256,9 @@
 
       <div class="msg-list">
         @for (m of messages(); track m.id) {
-          <div class="msg">
+          <div class="msg" [class.inbound]="m.kind === 'inbound'">
             <div class="msg-head">
-              <b>{{ m.kindLabel }}</b> → {{ m.recipientType }}
+              <b>{{ m.kindLabel }}</b> {{ m.kind === 'inbound' ? '← from' : '→' }} {{ m.recipientType }}
               <span class="badge" [attr.data-msg]="m.status">{{ m.status }}</span>
               <small class="muted">{{ m.createdAt | date: 'd MMM, h:mm a' }}</small>
             </div>
@@ -266,7 +266,9 @@
             @if (m.error) {
               <small class="error">{{ m.error }}</small>
             }
-            @if (m.status !== 'sent') {
+            @if (m.kind === 'inbound') {
+              <a class="btn btn-wa btn-xs" [href]="m.link" target="_blank" rel="noopener">Reply from my phone</a>
+            } @else if (m.status === 'manual' || m.status === 'failed') {
               <a
                 class="btn btn-wa btn-xs"
                 [href]="m.link"

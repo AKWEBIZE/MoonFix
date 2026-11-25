@@ -149,6 +149,10 @@
 .msg.card {
   padding: 16px 18px;
 }
+// A message the customer sent us
+.msg.inbound {
+  border-left: 3px solid var(--theme-primary);
+}
 .msg-head {
   display: flex;
   flex-wrap: wrap;

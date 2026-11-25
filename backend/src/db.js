@@ -483,6 +483,11 @@ await addColumn('bookings', 'amount_collected', 'INTEGER');
 await addColumn('bookings', 'payment_mode', 'TEXT');
 await addColumn('bookings', 'paid_at', 'TEXT');
 if (dialect === 'sqlite') await db.exec('CREATE INDEX IF NOT EXISTS idx_bookings_customer ON bookings(customer_id)');
+// WhatsApp Cloud API: Meta's message id (to match delivery receipts) and the template used (for Retry)
+await addColumn('whatsapp_messages', 'provider_message_id', 'VARCHAR(100) NULL',
+  'CREATE INDEX idx_msgs_provider_id ON whatsapp_messages (provider_message_id)');
+await addColumn('whatsapp_messages', 'template_name', 'VARCHAR(60) NULL');
+await addColumn('whatsapp_messages', 'template_params', 'TEXT NULL');
 
 // ---------------------------------------------------------------------------
 // Settings (kept in memory; only changed through updateSettings)
@@ -497,6 +502,9 @@ const DEFAULT_SETTINGS = {
   feedback_delay_hours: '2', // feedback request after completion
   followup_days: '90', // periodic service follow-up (0 = off)
   notify_admin_new_booking: '1',
+  // Where new-booking alerts go. Empty = the business number. With the WhatsApp API this must be a
+  // DIFFERENT number (your personal one): the API number cannot send messages to itself.
+  admin_alert_whatsapp: '',
   notify_technician: '1',
 };
 

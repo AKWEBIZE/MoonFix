@@ -12,7 +12,7 @@
           ><span>Business WhatsApp number</span
           ><input [(ngModel)]="s.business_whatsapp" inputmode="tel" />
           <small class="muted"
-            >Used for the “WhatsApp us” buttons and new-booking alerts.</small
+            >Customers message this number (“WhatsApp us” buttons and WhatsApp login).</small
           ></label
         >
       </div>
@@ -43,6 +43,16 @@
           />
           Send me a WhatsApp alert for every new booking</label
         >
+        @if (s.notify_admin_new_booking === '1') {
+          <label class="field full"
+            ><span>Send new-booking alerts to</span
+            ><input [(ngModel)]="s.admin_alert_whatsapp" inputmode="tel" placeholder="Your personal WhatsApp number" />
+            <small class="muted"
+              >Empty = the business number. When messages go out through the WhatsApp API, enter a
+              <b>different</b> number here (e.g. your personal one) — the business number cannot message itself.</small
+            ></label
+          >
+        }
         <label class="check full"
           ><input
             type="checkbox"
