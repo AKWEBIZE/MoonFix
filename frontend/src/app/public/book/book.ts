@@ -17,6 +17,7 @@ import { SiteService } from '../../core/site.service';
 import { PrettyDatePipe, Time12Pipe, localToday, prettyDate, to12h } from '../../core/ui';
 import { ApplianceAnim } from '../appliance-anim/appliance-anim';
 import { ConfirmBurst, preloadConfirmBurst } from './confirm-burst/confirm-burst';
+import { BookingCelebration } from './celebration/celebration';
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -24,6 +25,7 @@ type Step = 1 | 2 | 3 | 4;
   selector: 'app-book',
   imports: [
     ConfirmBurst,
+    BookingCelebration,
     FormsModule,
     RouterLink,
     IconComponent,
@@ -67,6 +69,8 @@ export class BookPage implements OnDestroy {
   submitting = signal(false);
   error = signal('');
   done = signal<PublicBooking | null>(null);
+  /** full-screen "Booking confirmed" celebration showing (closed -> the normal confirmed page) */
+  celebrate = signal(false);
   match = signal<'idle' | 'searching' | 'found'>('idle');
   today = localToday();
   private matchTimer?: ReturnType<typeof setTimeout>;
@@ -235,12 +239,16 @@ export class BookPage implements OnDestroy {
    *  - 'pick' with fly: the picked option flies into its row in the "Your booking" summary
    * Without browser support, or with "reduce motion", the change just happens.
    */
+  private vtRunning = false;
   private transition(kind: 'step-fwd' | 'step-back' | 'pick', update: () => void, fly?: { from: HTMLElement | null; to: string }) {
-    const doc = document as Document & { startViewTransition?: (cb: () => void) => { finished: Promise<void>; ready: Promise<void> } };
-    if (!doc.startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => { finished: Promise<void>; ready: Promise<void>; skipTransition?: () => void } };
+    // No support, reduced motion, or a transition still running (a quick second click):
+    // just apply the change - never risk losing a pick by stacking transitions.
+    if (!doc.startViewTransition || this.vtRunning || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       update();
       return;
     }
+    this.vtRunning = true;
     const html = document.documentElement;
     html.dataset['vt'] = kind;
     if (fly?.from) fly.from.style.setProperty('view-transition-name', 'pick-fly');
@@ -254,7 +262,11 @@ export class BookPage implements OnDestroy {
     // A transition can be skipped (tab hidden, or a new one started by a quick click): the change
     // still happens, but these promises reject - swallow that so it is not logged as an error.
     vt.ready.catch(() => {});
+    // safety net: never let a stalled transition (e.g. a frozen background tab) block the next one
+    const guard = setTimeout(() => vt.skipTransition?.(), 1500);
     vt.finished.catch(() => {}).finally(() => {
+      clearTimeout(guard);
+      this.vtRunning = false;
       delete html.dataset['vt'];
       target()?.style.removeProperty('view-transition-name');
     });
@@ -267,11 +279,17 @@ export class BookPage implements OnDestroy {
     if (!s || !sl || !d) return;
     this.submitting.set(true);
     this.error.set('');
+    const started = Date.now();
     this.api.book({ ...this.form, serviceId: s.id, slotId: sl.id, date: d }).subscribe({
       next: (b) => {
-        this.done.set(b);
-        this.submitting.set(false);
-        window.scrollTo({ top: 0 });
+        // let the "Confirming..." moment be seen (saving usually takes a split second)
+        const motion = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        setTimeout(() => {
+          this.done.set(b);
+          this.submitting.set(false);
+          this.celebrate.set(motion);
+          window.scrollTo({ top: 0 });
+        }, motion ? Math.max(0, 1000 - (Date.now() - started)) : 0);
       },
       error: (e) => {
         this.submitting.set(false);

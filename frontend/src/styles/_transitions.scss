@@ -3,6 +3,12 @@
 //  Browsers without support change instantly; "reduce motion" turns them off.
 // =============================================================================
 
+// Clicks and taps go straight through to the real page while a transition plays
+// (otherwise a quick tap during the half-second animation would be swallowed)
+::view-transition {
+  pointer-events: none;
+}
+
 // ---------- Page change: old page lifts away, new page rises in ----------
 ::view-transition-old(root) {
   animation: vt-page-out 0.26s cubic-bezier(0.4, 0, 1, 1) both;

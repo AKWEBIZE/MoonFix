@@ -1,4 +1,4 @@
-import { afterNextRender, Component, DestroyRef, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { afterNextRender, Component, DestroyRef, ElementRef, inject, input, signal, viewChild } from '@angular/core';
 import type { ConfirmScene } from '../../three/confirm-scene';
 
 /**
@@ -14,6 +14,8 @@ import type { ConfirmScene } from '../../three/confirm-scene';
 export class ConfirmBurst {
   private canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private mark = viewChild.required<ElementRef<SVGElement>>('mark');
+  /** false: just the drawn tick (the full-screen celebration already played) */
+  play = input(true);
   threeOn = signal(false);
   private scene: ConfirmScene | null = null;
   private raf = 0;
@@ -21,7 +23,7 @@ export class ConfirmBurst {
   constructor() {
     const destroyRef = inject(DestroyRef);
     afterNextRender(() => {
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !webgl()) return;
+      if (!this.play() || window.matchMedia('(prefers-reduced-motion: reduce)').matches || !webgl()) return;
       import('../../three/confirm-scene').then(({ createConfirmScene }) => {
         const canvas = this.canvas().nativeElement;
         if (!canvas.isConnected) return;

@@ -67,7 +67,7 @@
           }
         </div>
         }
-        <app-confirm-burst />
+        <app-confirm-burst [play]="!celebrate()" />
         <h2>Booking confirmed!</h2>
         <p class="muted">Thank you {{ b.customerName }}. Your doorstep service is booked.</p>
         <div class="ref-box">
@@ -427,7 +427,7 @@
                     <p>Check everything before you confirm</p>
                   </div>
                 </div>
-                <dl class="summary">
+                <dl class="summary" [class.sending]="submitting()">
                   <div>
                     <dt>Service</dt>
                     <dd>
@@ -482,11 +482,12 @@
                   </button>
                   <button
                     class="btn btn-primary btn-lg confirm-btn"
+                    [class.sending]="submitting()"
                     [disabled]="submitting()"
                     (click)="submit()"
                   >
                     @if (submitting()) {
-                      <span class="spinner"></span> Booking your slot…
+                      <span class="spinner"></span> Confirming your booking…
                     } @else {
                       <app-icon name="check" [size]="18" /> Confirm booking
                     }
@@ -589,3 +590,8 @@
     }
   </div>
 </section>
+
+<!-- Full-screen celebration right after confirming (closes to reveal the confirmed page above) -->
+@if (celebrate() && done(); as b) {
+  <app-booking-celebration [booking]="b" (closed)="celebrate.set(false)" />
+}

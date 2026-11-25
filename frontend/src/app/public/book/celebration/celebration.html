@@ -1,0 +1,88 @@
+@let b = booking();
+<div
+  class="cel"
+  #dialog
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="cel-title"
+  tabindex="-1"
+  [class.closing]="closing()"
+>
+  <div class="cel-backdrop" (click)="close()"></div>
+  <canvas #canvas class="cel-canvas" [class.on]="three()" aria-hidden="true"></canvas>
+
+  <div class="cel-content">
+    <!-- 3D badge is drawn here (on the canvas); rings pulse out from it -->
+    <div class="cel-badge" #badge aria-hidden="true">
+      <span class="shock"></span><span class="shock s2"></span><span class="shock s3"></span>
+      @if (!three()) {
+        <svg class="cel-tick" viewBox="0 0 100 100">
+          <circle class="ct-ring" cx="50" cy="50" r="44" />
+          <path class="ct-tick" d="M30 52 L44 66 L71 37" />
+        </svg>
+      }
+    </div>
+
+    <h2 id="cel-title" class="cel-title">
+      @for (w of titleWords; track $index) {
+        <span [style.animation-delay.ms]="650 + $index * 130">{{ w }}</span>
+      }
+    </h2>
+    <p class="cel-sub">Thank you, {{ b.customerName }}. Your doorstep service is booked.</p>
+
+    <!-- Booking ID: flips in letter by letter like a departure board -->
+    <div class="ref-board" [attr.aria-label]="'Booking ID ' + b.ref">
+      <small>Booking ID</small>
+      <div class="flaps" aria-hidden="true">
+        @for (f of flaps(); track $index) {
+          <span class="flap" [class.set]="f.set">{{ f.ch }}</span>
+        }
+      </div>
+    </div>
+
+    <!-- The ticket -->
+    <div class="ticket">
+      <div class="t-row">
+        <span>Service</span><b>{{ b.serviceName }}</b>
+      </div>
+      <div class="t-row">
+        <span>When</span><b>{{ b.date | prettyDate }} · {{ b.slotStart | time12 }} – {{ b.slotEnd | time12 }}</b>
+      </div>
+      <div class="t-row">
+        <span>Where</span><b>{{ b.address }}</b>
+      </div>
+      <div class="t-perf"></div>
+      <div class="t-road" aria-hidden="true">
+        <svg class="van" viewBox="0 0 64 32">
+          <rect x="2" y="6" width="38" height="18" rx="4" class="van-body" />
+          <path d="M40 11h11l9 8v5H40z" class="van-body" />
+          <path d="M43 13h7l5 5H43z" class="van-glass" />
+          <rect x="8" y="11" width="20" height="5" rx="2" class="van-stripe" />
+          <circle cx="14" cy="26" r="4.5" class="van-wheel" />
+          <circle cx="50" cy="26" r="4.5" class="van-wheel" />
+        </svg>
+        <svg class="house" viewBox="0 0 40 36">
+          <path d="M4 17 20 4l16 13" class="house-roof" />
+          <rect x="8" y="16" width="24" height="18" rx="2" class="house-wall" />
+          <rect x="17" y="23" width="7" height="11" rx="1" class="house-door" />
+        </svg>
+        <span class="road-line"></span>
+      </div>
+      <span class="stamp">Confirmed</span>
+    </div>
+
+    <ul class="cel-steps">
+      <li style="--d: 2700ms"><i>✓</i> Booking saved</li>
+      <li style="--d: 3050ms">
+        <i>✓</i>
+        {{ b.technicianName ? b.technicianName + ' will visit you' : 'Arranging your technician' }}
+      </li>
+      <li style="--d: 3400ms"><i>✓</i> WhatsApp update on its way</li>
+    </ul>
+
+    <button type="button" class="btn btn-accent btn-lg cel-btn" (click)="close()">
+      View booking details
+      <span class="auto" aria-hidden="true"></span>
+    </button>
+  </div>
+</div>

@@ -9,7 +9,7 @@ export interface ConfirmScene {
   /** draws a frame; returns false once the animation has finished */
   frame(t: number): boolean;
   /** canvas size and where (in canvas pixels) the badge should sit */
-  resize(width: number, height: number, badgeX: number, badgeY: number): void;
+  resize(width: number, height: number, badgeX: number, badgeY: number, badgePx?: number): void;
   dispose(): void;
 }
 
@@ -89,7 +89,7 @@ export function createConfirmScene(canvas: HTMLCanvasElement): ConfirmScene {
   const BURST_AT = 0.28;
   let lastT = 0;
 
-  function resize(width: number, height: number, bx: number, by: number) {
+  function resize(width: number, height: number, bx: number, by: number, badgePx = 92) {
     renderer.setSize(width, height, false);
     camera.aspect = width / Math.max(1, height);
     camera.updateProjectionMatrix();
@@ -97,8 +97,8 @@ export function createConfirmScene(canvas: HTMLCanvasElement): ConfirmScene {
     const vh = 2 * camera.position.z * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
     const vw = vh * camera.aspect;
     badge.position.set((bx / width - 0.5) * vw, (0.5 - by / height) * vh, 0);
-    // badge about 92 px across
-    badge.userData['size'] = (92 / height) * vh / 2.2;
+    // badge about badgePx pixels across
+    badge.userData['size'] = (badgePx / height) * vh / 2.2;
   }
 
   function frame(t: number) {
