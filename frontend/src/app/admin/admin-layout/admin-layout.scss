@@ -27,7 +27,8 @@
 }
 .admin-brand img {
   display: block;
-  width: 180px;
+  width: 120px;
+  opacity: 0.75; // subtle in the sidebar
   max-width: 100%;
   height: auto;
 }
