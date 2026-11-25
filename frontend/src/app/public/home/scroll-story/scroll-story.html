@@ -1,0 +1,76 @@
+@if (mode() === 'static') {
+  <!-- Reduced motion / no 3D support: same content, no animation -->
+  <section class="story-static" aria-label="Our services">
+    <div class="container static-grid">
+      @for (c of chapters(); track c.key) {
+        <div class="static-ch" [attr.data-cat]="c.key">
+          <p class="static-words">{{ c.left }} {{ c.right }}</p>
+          <h3>{{ c.title }}</h3>
+          <p class="muted-light">{{ c.tagline }}</p>
+          <ul>
+            @for (s of c.items; track s.id) {
+              <li>
+                <a [routerLink]="['/book']" [queryParams]="{ service: s.id }">{{ s.name }}</a>
+                <span>₹{{ s.price | number }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    </div>
+  </section>
+} @else {
+  <section class="story" #section aria-label="Our services in 3D">
+    <div class="stage">
+      <!-- background colour per chapter; the next one wipes in as a growing circle -->
+      <div class="bg bg-base"></div>
+      <div class="bg bg-wipe bg-1"></div>
+      <div class="bg bg-wipe bg-2"></div>
+      <div class="bg bg-grid"></div>
+
+      <!-- big words, behind the 3D appliance -->
+      @for (c of chapters(); track c.key; let i = $index) {
+        <div class="words" [attr.data-ch]="i" aria-hidden="true">
+          <span class="w w-left">{{ c.left }}</span><span class="w w-right">{{ c.right }}</span>
+        </div>
+      }
+
+      <canvas #canvas aria-hidden="true"></canvas>
+      <div class="loader" aria-hidden="true"><span></span></div>
+
+      <!-- service cards, in front -->
+      @for (c of chapters(); track c.key; let i = $index) {
+        <div class="cards" [attr.data-ch]="i">
+          <div class="card head">
+            <small>{{ c.short }} · Doorstep service</small>
+            <h3>{{ c.title }}</h3>
+            <p>{{ c.tagline }}</p>
+          </div>
+          @for (s of c.items; track s.id) {
+            <a class="card svc" [routerLink]="['/book']" [queryParams]="{ service: s.id }">
+              <span class="svc-name">{{ s.name }}</span>
+              <span class="svc-meta">
+                <b>₹<span [attr.data-to]="s.price">0</span></b>
+                <small>~{{ s.durationMin }} min</small>
+              </span>
+              <span class="svc-go">Book →</span>
+            </a>
+          }
+        </div>
+      }
+
+      <div class="outro">
+        <h2>Your appliance,<br /><span>fixed at your door.</span></h2>
+        <p>Pick a time slot that suits you — a verified technician comes to you.</p>
+        <a class="btn btn-accent btn-lg" routerLink="/book">Book a technician</a>
+      </div>
+
+      <nav class="dots" aria-label="Jump to an appliance">
+        @for (c of chapters(); track c.key; let i = $index) {
+          <button type="button" (click)="goTo(i)">{{ c.short }}</button>
+        }
+      </nav>
+      <div class="scroll-hint" aria-hidden="true">Scroll <span></span></div>
+    </div>
+  </section>
+}

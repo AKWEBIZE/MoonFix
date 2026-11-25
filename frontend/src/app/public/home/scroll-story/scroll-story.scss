@@ -1,0 +1,391 @@
+// 3D scroll story. The section is tall; the stage inside stays pinned to the screen while the
+// visitor scrolls through it, and scroll-story.ts animates everything from the scroll position.
+:host {
+  display: block;
+  // chapter colours: logo blue, cool teal, deep indigo (same as story-timeline.ts)
+  --ch-0: 11, 152, 238;
+  --ch-1: 20, 195, 180;
+  --ch-2: 99, 102, 241;
+}
+
+.story {
+  position: relative;
+  height: 520vh;
+  background: var(--theme-black);
+}
+
+.stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  color: var(--theme-on-dark);
+  isolation: isolate;
+}
+
+// ---------- backgrounds ----------
+.bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.bg-base {
+  background: radial-gradient(ellipse 70% 60% at 50% 52%, rgba(var(--ch-0), 0.42), transparent 70%), #00060f;
+}
+.bg-1 {
+  background: radial-gradient(ellipse 70% 60% at 50% 52%, rgba(var(--ch-1), 0.4), transparent 70%), #00100e;
+  clip-path: circle(0% at 50% 48%);
+}
+.bg-2 {
+  background: radial-gradient(ellipse 70% 60% at 50% 52%, rgba(var(--ch-2), 0.45), transparent 70%), #04051a;
+  clip-path: circle(0% at 50% 48%);
+}
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 60% 55% at 50% 50%, #000 30%, transparent 75%);
+}
+
+// ---------- big words (behind the appliance) ----------
+.words {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  visibility: hidden;
+}
+.w {
+  position: absolute;
+  font-family: var(--theme-font-display);
+  font-weight: 800;
+  font-size: clamp(64px, 13vw, 230px);
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+  color: var(--theme-white);
+  opacity: 0;
+  will-change: transform, opacity;
+  text-shadow: 0 10px 60px rgba(0, 0, 0, 0.35);
+}
+.w-left {
+  left: 6vw;
+  top: 16vh;
+}
+.w-right {
+  right: 6vw;
+  bottom: 16vh;
+  color: rgba(255, 255, 255, 0.92);
+  -webkit-text-stroke: 0;
+}
+
+// ---------- 3D canvas ----------
+canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  display: block;
+}
+.loader {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  transition: opacity 0.4s;
+}
+.loader span {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.15);
+  border-top-color: var(--theme-primary-light);
+  animation: spin 0.8s linear infinite;
+}
+:host(.ready) .loader {
+  opacity: 0;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ---------- service cards (in front) ----------
+.cards {
+  position: absolute;
+  z-index: 3;
+  right: 6vw;
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(380px, 34vw);
+  display: grid;
+  gap: 12px;
+  visibility: hidden;
+}
+.card {
+  opacity: 0;
+  will-change: transform, opacity;
+  display: block;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: var(--theme-on-dark);
+  text-decoration: none;
+}
+.card.head small {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--theme-primary-300);
+}
+.card.head h3 {
+  margin: 6px 0 4px;
+  font-family: var(--theme-font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+.card.head p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--theme-on-dark-soft);
+}
+.card.svc {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 12px;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+.card.svc:hover {
+  background: rgba(255, 255, 255, 0.13);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.svc-name {
+  font-weight: 600;
+}
+.svc-meta {
+  grid-row: span 2;
+  text-align: right;
+}
+.svc-meta b {
+  display: block;
+  font-family: var(--theme-font-display);
+  font-size: 1.35rem;
+  font-variant-numeric: tabular-nums;
+}
+.svc-meta small,
+.svc-go {
+  font-size: 0.8rem;
+  color: var(--theme-on-dark-muted);
+}
+.card.svc:hover .svc-go {
+  color: var(--theme-primary-light);
+}
+
+// ---------- outro ----------
+.outro {
+  position: absolute;
+  z-index: 3;
+  left: 6vw;
+  top: 50%;
+  margin-top: -130px;
+  max-width: 560px;
+  opacity: 0;
+  pointer-events: none;
+}
+.outro h2 {
+  margin: 0 0 14px;
+  font-family: var(--theme-font-display);
+  font-size: clamp(36px, 5vw, 68px);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+}
+.outro h2 span {
+  background: var(--theme-gradient-accent);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.outro p {
+  margin: 0 0 22px;
+  color: var(--theme-on-dark-soft);
+  font-size: 1.05rem;
+}
+
+// ---------- chapter buttons & scroll hint ----------
+.dots {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  bottom: 26px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+}
+.dots button {
+  border: 0;
+  cursor: pointer;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--theme-on-dark-muted);
+  font: 600 0.82rem var(--theme-font);
+  transition:
+    background 0.25s,
+    color 0.25s;
+}
+.dots button.active {
+  background: var(--theme-white);
+  color: var(--theme-black);
+}
+.scroll-hint {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  bottom: 84px;
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--theme-on-dark-muted);
+  pointer-events: none;
+}
+.scroll-hint span {
+  width: 2px;
+  height: 26px;
+  border-radius: 2px;
+  background: linear-gradient(var(--theme-primary-light), transparent);
+  animation: hint 1.6s ease-in-out infinite;
+}
+@keyframes hint {
+  0%,
+  100% {
+    transform: translateY(-4px);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translateY(6px);
+    opacity: 1;
+  }
+}
+
+// ---------- portrait screens (phones): appliance on top, cards below ----------
+@media (max-aspect-ratio: 9/10) {
+  .story {
+    height: 470vh;
+  }
+  .w {
+    font-size: clamp(56px, 22vw, 150px);
+  }
+  .w-left {
+    left: 5vw;
+    top: 13vh;
+  }
+  .w-right {
+    right: 5vw;
+    bottom: 22vh;
+  }
+  .cards {
+    left: 16px;
+    right: 16px;
+    top: auto;
+    bottom: 78px;
+    transform: none;
+    width: auto;
+    gap: 8px;
+  }
+  .card {
+    padding: 11px 14px;
+    border-radius: 14px;
+  }
+  .card.head h3 {
+    font-size: 1.15rem;
+  }
+  .card.head p {
+    display: none;
+  }
+  .svc-go {
+    display: none;
+  }
+  .svc-meta b {
+    font-size: 1.1rem;
+  }
+  .outro {
+    left: 20px;
+    right: 20px;
+    top: auto;
+    bottom: 96px;
+    margin: 0;
+  }
+  // left-aligned so the floating WhatsApp button (bottom right) does not cover it
+  .dots {
+    bottom: 18px;
+    left: 16px;
+    transform: none;
+  }
+  .scroll-hint {
+    bottom: 76px;
+  }
+}
+
+// ---------- static version (reduced motion / no 3D) ----------
+.story-static {
+  padding: 72px 0;
+  background: var(--theme-gradient-dark);
+  color: var(--theme-on-dark);
+}
+.static-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+}
+.static-ch {
+  padding: 22px;
+  border-radius: var(--theme-radius-lg);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.static-words {
+  margin: 0;
+  font-family: var(--theme-font-display);
+  font-weight: 800;
+  font-size: 2.2rem;
+  letter-spacing: -0.03em;
+}
+.static-ch h3 {
+  margin: 6px 0;
+}
+.static-ch ul {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.static-ch li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.static-ch a {
+  color: var(--theme-on-dark);
+}

@@ -9,6 +9,7 @@ import { CountUpDirective } from '../../core/count-up';
 import { ApplianceAnim } from '../appliance-anim/appliance-anim';
 import { HeroArt } from '../hero-art/hero-art';
 import { WaDemo } from '../wa-demo/wa-demo';
+import { ScrollStory } from './scroll-story/scroll-story';
 
 // ---------------------------------------------------------------------------
 // Marketing content — EDIT THESE before going live.
@@ -87,6 +88,7 @@ const FAQS = [
   selector: 'app-home',
   imports: [
     RouterLink,
+    ScrollStory,
     IconComponent,
     DecimalPipe,
     RevealDirective,
