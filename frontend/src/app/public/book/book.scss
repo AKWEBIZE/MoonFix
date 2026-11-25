@@ -201,6 +201,14 @@
 }
 
 // Step transitions & staggered entries
+// slides between steps (name only during a step transition; see styles/_transitions.scss)
+:host-context(html[data-vt^='step']) .step-pane {
+  view-transition-name: step-pane;
+}
+// the booking banner's appliance: the clicked service card on the home page morphs into it
+.bs-appliance {
+  view-transition-name: svc-morph;
+}
 .step-pane {
   animation: paneIn 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
 }

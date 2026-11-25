@@ -54,6 +54,7 @@
   <div class="container">
     @if (done(); as b) {
       <div class="card elevated success-card" style="max-width: 720px; margin: 0 auto">
+        @if (!has3d) {
         <div class="confetti" aria-hidden="true">
           @for (p of confetti; track $index) {
             <i
@@ -65,10 +66,8 @@
             ></i>
           }
         </div>
-        <svg class="check-draw" viewBox="0 0 100 100" aria-hidden="true">
-          <circle class="cd-ring" cx="50" cy="50" r="44" />
-          <path class="cd-tick" d="M30 52 L44 66 L71 37" />
-        </svg>
+        }
+        <app-confirm-burst />
         <h2>Booking confirmed!</h2>
         <p class="muted">Thank you {{ b.customerName }}. Your doorstep service is booked.</p>
         <div class="ref-box">
@@ -193,7 +192,7 @@
                         type="radio"
                         name="svc"
                         [checked]="service()?.id === s.id"
-                        (change)="pickService(s)"
+                        (change)="pickService(s, $event)"
                       />
                       <div class="option-body">
                         <b>{{ s.name }}</b>
@@ -235,7 +234,7 @@
                         [class.selected]="date() === d.date"
                         [disabled]="!d.open"
                         [title]="d.reason || ''"
-                        (click)="pickDate(d.date)"
+                        (click)="pickDate(d.date, $event)"
                       >
                         <small>{{ dow(d.date) }}</small>
                         <b>{{ dayNum(d.date) }}</b>
@@ -272,7 +271,7 @@
                           [class.live]="s.available"
                           [class.selected]="slot()?.id === s.id"
                           [disabled]="!s.available"
-                          (click)="slot.set(s)"
+                          (click)="pickSlot(s, $event)"
                         >
                           <b>{{ s.start | time12 }} – {{ s.end | time12 }}</b>
                           <small [class.few]="s.available && s.remaining <= 1">{{
@@ -514,7 +513,7 @@
                 ><small>Service</small>
                 @for (sv of [service()]; track sv?.id) {
                   @if (sv) {
-                    <b class="swap">{{ sv.name }}</b>
+                    <b class="swap" data-fly="service">{{ sv.name }}</b>
                   } @else {
                     <b class="ph">Not selected</b>
                   }
@@ -528,7 +527,7 @@
                 ><small>Date</small>
                 @for (d of [date()]; track d) {
                   @if (d) {
-                    <b class="swap">{{ d | prettyDate }}</b>
+                    <b class="swap" data-fly="date">{{ d | prettyDate }}</b>
                   } @else {
                     <b class="ph">Pick a date</b>
                   }
@@ -542,7 +541,7 @@
                 ><small>Time slot</small>
                 @for (sl of [slot()]; track sl?.id) {
                   @if (sl) {
-                    <b class="swap">{{ sl.start | time12 }} – {{ sl.end | time12 }}</b>
+                    <b class="swap" data-fly="slot">{{ sl.start | time12 }} – {{ sl.end | time12 }}</b>
                   } @else {
                     <b class="ph">Pick a slot</b>
                   }

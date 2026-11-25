@@ -1,5 +1,6 @@
-import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, afterNextRender, computed, effect, signal, viewChild } from '@angular/core';
 import { IconComponent } from '../../core/icon/icon';
+import type { HeroScene } from '../three/hero-scene';
 
 /** A booking's journey, cycled live in the hero status card. */
 const JOURNEY = [
@@ -35,6 +36,96 @@ export class HeroArt implements OnInit, OnDestroy {
 
   private timers: ReturnType<typeof setInterval>[] = [];
 
+  // ---------- live 3D version ----------
+  private canvas = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
+  private art = viewChild<ElementRef<HTMLElement>>('art');
+  /** true once the 3D scene is drawing (the flat drawing then fades out) */
+  threeOn = signal(false);
+  private scene: HeroScene | null = null;
+  private running = false;
+  private raf = 0;
+  private visible = true;
+  private cleanups: (() => void)[] = [];
+
+  constructor() {
+    afterNextRender(() => {
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduced || !this.webgl()) return; // keep the flat animated drawing
+      // load after the page itself has finished loading, so the hero text shows instantly
+      const later = () => ('requestIdleCallback' in window ? requestIdleCallback(() => this.load3d(), { timeout: 2500 }) : setTimeout(() => this.load3d(), 600));
+      if (document.readyState === 'complete') later();
+      else window.addEventListener('load', later, { once: true });
+    });
+    // the 3D AC display follows the same cooling countdown as the drawing
+    effect(() => {
+      const t = this.temp();
+      if (this.threeOn()) this.scene?.setTemp(t);
+    });
+  }
+
+  private webgl() {
+    try {
+      const c = document.createElement('canvas');
+      return !!(c.getContext('webgl2') || c.getContext('webgl'));
+    } catch {
+      return false;
+    }
+  }
+
+  private async load3d() {
+    const canvas = this.canvas()?.nativeElement;
+    const art = this.art()?.nativeElement;
+    if (!canvas || !art || !canvas.isConnected) return;
+    const { createHeroScene } = await import('../three/hero-scene');
+    if (!canvas.isConnected) return;
+    this.scene = createHeroScene(canvas);
+    const fit = () => this.scene?.resize(canvas.clientWidth, canvas.clientHeight);
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(canvas);
+    // draw only while the hero is on screen
+    const io = new IntersectionObserver(([e]) => {
+      this.visible = e.isIntersecting;
+      if (this.visible) this.run();
+    });
+    io.observe(art);
+    // follow the mouse over the page, or the phone's tilt
+    const onMove = (ev: PointerEvent) => {
+      const r = art.getBoundingClientRect();
+      this.scene?.look(((ev.clientX - r.left) / r.width) * 2 - 1, ((ev.clientY - r.top) / r.height) * 2 - 1);
+    };
+    const onTilt = (ev: DeviceOrientationEvent) => {
+      if (ev.gamma == null || ev.beta == null) return;
+      this.scene?.look(ev.gamma / 35, (ev.beta - 45) / 40);
+    };
+    window.addEventListener('pointermove', onMove, { passive: true });
+    window.addEventListener('deviceorientation', onTilt, { passive: true });
+    this.cleanups.push(() => {
+      ro.disconnect();
+      io.disconnect();
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('deviceorientation', onTilt);
+    });
+    this.scene.setTemp(this.temp());
+    this.run();
+    this.threeOn.set(true);
+  }
+
+  private run() {
+    if (this.running || !this.scene) return;
+    this.running = true;
+    const start = performance.now();
+    const loop = (now: number) => {
+      if (!this.visible || !this.scene) {
+        this.running = false;
+        return;
+      }
+      this.scene.frame((now - start) / 1000);
+      this.raf = requestAnimationFrame(loop);
+    };
+    this.raf = requestAnimationFrame(loop);
+  }
+
   ngOnInit() {
     // Booking journey: advance every 2.6s, loop
     this.timers.push(setInterval(() => this.step.update((s) => (s + 1) % JOURNEY.length), 2600));
@@ -50,5 +141,9 @@ export class HeroArt implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.timers.forEach(clearInterval);
+    cancelAnimationFrame(this.raf);
+    this.cleanups.forEach((fn) => fn());
+    this.scene?.dispose();
+    this.scene = null;
   }
 }

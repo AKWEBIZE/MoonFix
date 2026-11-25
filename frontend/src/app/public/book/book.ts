@@ -1,4 +1,4 @@
-import { Component, OnDestroy, computed, effect, inject, signal } from '@angular/core';
+import { ApplicationRef, Component, OnDestroy, computed, effect, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -16,12 +16,14 @@ import {
 import { SiteService } from '../../core/site.service';
 import { PrettyDatePipe, Time12Pipe, localToday, prettyDate, to12h } from '../../core/ui';
 import { ApplianceAnim } from '../appliance-anim/appliance-anim';
+import { ConfirmBurst, preloadConfirmBurst } from './confirm-burst/confirm-burst';
 
 type Step = 1 | 2 | 3 | 4;
 
 @Component({
   selector: 'app-book',
   imports: [
+    ConfirmBurst,
     FormsModule,
     RouterLink,
     IconComponent,
@@ -35,6 +37,17 @@ type Step = 1 | 2 | 3 | 4;
 })
 export class BookPage implements OnDestroy {
   private api = inject(ApiService);
+  private appRef = inject(ApplicationRef);
+  /** 3D "Booking confirmed" moment available (else the CSS confetti is used) */
+  readonly has3d = (() => {
+    try {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+      const c = document.createElement('canvas');
+      return !!(c.getContext('webgl2') || c.getContext('webgl'));
+    } catch {
+      return false;
+    }
+  })();
   private route = inject(ActivatedRoute);
   site = inject(SiteService);
   account = inject(CustomerAuthService);
@@ -148,7 +161,15 @@ export class BookPage implements OnDestroy {
     });
   }
 
-  pickService(s: ServiceItem) {
+  pickService(s: ServiceItem, ev?: Event) {
+    if (ev && this.service()?.id !== s.id) {
+      const from = (ev.target as HTMLElement).closest('label')?.querySelector<HTMLElement>('.option-body b') ?? null;
+      return this.transition('pick', () => this.applyService(s), { from, to: 'service' });
+    }
+    this.applyService(s);
+  }
+
+  private applyService(s: ServiceItem) {
     const changedCategory = this.service()?.category !== s.category;
     this.service.set(s);
     if (changedCategory || !this.dates().length) {
@@ -160,7 +181,23 @@ export class BookPage implements OnDestroy {
     }
   }
 
-  pickDate(d: string) {
+  pickDate(d: string, ev?: Event) {
+    if (ev && this.date() !== d) {
+      const from = (ev.currentTarget as HTMLElement | null) ?? null;
+      return this.transition('pick', () => this.applyDate(d), { from, to: 'date' });
+    }
+    this.applyDate(d);
+  }
+
+  pickSlot(s: SlotOption, ev?: Event) {
+    if (ev && this.slot()?.id !== s.id) {
+      const from = (ev.currentTarget as HTMLElement | null) ?? null;
+      return this.transition('pick', () => this.slot.set(s), { from, to: 'slot' });
+    }
+    this.slot.set(s);
+  }
+
+  private applyDate(d: string) {
     this.date.set(d);
     this.slot.set(null);
     this.loadSlots();
@@ -185,8 +222,42 @@ export class BookPage implements OnDestroy {
     if (step >= 3 && !this.slot()) return;
     if (step === 4 && (!this.form.customerName || !this.form.phone || !this.form.address)) return;
     this.error.set('');
-    this.step.set(step);
+    if (step === 4) preloadConfirmBurst(); // 3D "confirmed" moment ready before they press Confirm
+    if (step !== this.step()) {
+      this.transition(step > this.step() ? 'step-fwd' : 'step-back', () => this.step.set(step));
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /**
+   * Runs a change inside a browser view transition (see styles/_transitions.scss):
+   *  - 'step-fwd' / 'step-back': the step pane slides out and the next one slides in
+   *  - 'pick' with fly: the picked option flies into its row in the "Your booking" summary
+   * Without browser support, or with "reduce motion", the change just happens.
+   */
+  private transition(kind: 'step-fwd' | 'step-back' | 'pick', update: () => void, fly?: { from: HTMLElement | null; to: string }) {
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => { finished: Promise<void>; ready: Promise<void> } };
+    if (!doc.startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      update();
+      return;
+    }
+    const html = document.documentElement;
+    html.dataset['vt'] = kind;
+    if (fly?.from) fly.from.style.setProperty('view-transition-name', 'pick-fly');
+    const target = () => (fly ? document.querySelector<HTMLElement>(`[data-fly="${fly.to}"]`) : null);
+    const vt = doc.startViewTransition(() => {
+      fly?.from?.style.removeProperty('view-transition-name');
+      update();
+      this.appRef.tick(); // render now, so the browser can capture the new state
+      target()?.style.setProperty('view-transition-name', 'pick-fly');
+    });
+    // A transition can be skipped (tab hidden, or a new one started by a quick click): the change
+    // still happens, but these promises reject - swallow that so it is not logged as an error.
+    vt.ready.catch(() => {});
+    vt.finished.catch(() => {}).finally(() => {
+      delete html.dataset['vt'];
+      target()?.style.removeProperty('view-transition-name');
+    });
   }
 
   submit() {

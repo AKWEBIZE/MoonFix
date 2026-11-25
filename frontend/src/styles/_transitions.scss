@@ -1,0 +1,114 @@
+// =============================================================================
+//  Page-to-page and booking-step transitions (browser View Transitions API).
+//  Browsers without support change instantly; "reduce motion" turns them off.
+// =============================================================================
+
+// ---------- Page change: old page lifts away, new page rises in ----------
+::view-transition-old(root) {
+  animation: vt-page-out 0.26s cubic-bezier(0.4, 0, 1, 1) both;
+}
+::view-transition-new(root) {
+  animation: vt-page-in 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes vt-page-out {
+  to {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.985);
+    filter: blur(4px);
+  }
+}
+@keyframes vt-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(26px) scale(0.985);
+    filter: blur(6px);
+  }
+}
+
+// These stay put while the page underneath changes
+.site-header {
+  view-transition-name: site-header;
+}
+.wa-float {
+  view-transition-name: wa-float;
+}
+
+// ---------- Service card -> booking page: the appliance picture morphs ----------
+// (home.ts names the clicked card's picture "svc-morph"; the booking banner's appliance has the same name)
+::view-transition-group(svc-morph) {
+  animation-duration: 0.6s;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+::view-transition-old(svc-morph),
+::view-transition-new(svc-morph) {
+  height: 100%;
+  object-fit: contain;
+}
+
+// ---------- Booking steps slide like chapters ----------
+// (book.ts runs step changes and picks inside a view transition and sets html[data-vt]; the page itself stays still)
+html[data-vt]::view-transition-old(root),
+html[data-vt]::view-transition-new(root) {
+  animation: none;
+}
+::view-transition-old(step-pane) {
+  animation: vt-step-out-left 0.3s cubic-bezier(0.4, 0, 1, 1) both;
+}
+::view-transition-new(step-pane) {
+  animation: vt-step-in-right 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+html[data-vt='step-back']::view-transition-old(step-pane) {
+  animation-name: vt-step-out-right;
+}
+html[data-vt='step-back']::view-transition-new(step-pane) {
+  animation-name: vt-step-in-left;
+}
+::view-transition-group(step-pane) {
+  animation-duration: 0.45s;
+}
+@keyframes vt-step-out-left {
+  to {
+    opacity: 0;
+    transform: translateX(-60px) rotateY(8deg);
+  }
+}
+@keyframes vt-step-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(80px) rotateY(-8deg);
+  }
+}
+@keyframes vt-step-out-right {
+  to {
+    opacity: 0;
+    transform: translateX(60px) rotateY(-8deg);
+  }
+}
+@keyframes vt-step-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-80px) rotateY(8deg);
+  }
+}
+
+// ---------- Picked option flies into the "Your booking" summary ----------
+::view-transition-group(pick-fly) {
+  animation-duration: 0.55s;
+  animation-timing-function: cubic-bezier(0.3, 0.9, 0.25, 1.05);
+  z-index: 50;
+}
+::view-transition-old(pick-fly),
+::view-transition-new(pick-fly) {
+  height: 100%;
+  object-fit: none;
+  overflow: clip;
+}
+
+// ---------- Respect "reduce motion" ----------
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

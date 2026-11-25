@@ -197,4 +197,10 @@ export class HomePage implements OnInit, OnDestroy {
     const all = this.site.services();
     return t === 'ALL' ? all : all.filter((s) => s.category === t);
   });
+
+  /** The clicked card's appliance picture morphs into the booking page banner (page view transition). */
+  morphCard(ev: Event) {
+    const card = (ev.currentTarget as HTMLElement).closest('.svc-card');
+    card?.querySelector<HTMLElement>('app-appliance-anim')?.style.setProperty('view-transition-name', 'svc-morph');
+  }
 }
