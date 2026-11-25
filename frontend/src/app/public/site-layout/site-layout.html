@@ -9,7 +9,7 @@
 <header class="site-header" [class.scrolled]="scrolled()">
   <div class="container header-row">
     <a routerLink="/" class="brand" (click)="menu.set(false)">
-      <span class="brand-mark"><app-icon name="AC" [size]="22" /></span>
+      <span class="brand-mark"><img src="brand/logo-mark.png" alt="" width="42" height="42" /></span>
       <span>{{ site.businessName() }}<small>AC · Fridge · Washing Machine</small></span>
     </a>
     <button class="icon-btn menu-btn" (click)="menu.set(!menu())" aria-label="Menu">
@@ -48,9 +48,9 @@
 <footer class="site-footer">
   <div class="container footer-grid">
     <div>
-      <div class="brand light">
-        <span class="brand-mark"><app-icon name="AC" [size]="22" /></span
-        ><span>{{ site.businessName() }}<small>AC · Fridge · Washing Machine</small></span>
+      <div class="footer-logo">
+        <img src="brand/logo-full.jpg" [alt]="site.businessName() + ' - AC service & repair'" width="240" height="139" loading="lazy" />
+        <small>AC · Fridge · Washing Machine</small>
       </div>
       <p class="muted-light">
         Trusted doorstep repair & servicing for air conditioners, refrigerators and washing

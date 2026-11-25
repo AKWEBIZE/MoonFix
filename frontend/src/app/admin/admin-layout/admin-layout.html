@@ -1,6 +1,9 @@
 <div class="admin-shell" [class.nav-open]="navOpen()">
   <aside class="admin-side" (click)="navOpen.set(false)">
-    <div class="admin-brand"><app-icon name="tool" [size]="22" /> Admin panel</div>
+    <div class="admin-brand">
+      <img src="brand/logo-full.jpg" alt="MoonFix" width="200" height="116" />
+      <span>Admin panel</span>
+    </div>
     <nav>
       @for (l of links; track l.path) {
         <a [routerLink]="l.path" routerLinkActive="active"

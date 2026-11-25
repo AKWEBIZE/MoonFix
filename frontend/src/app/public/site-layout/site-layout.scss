@@ -80,16 +80,39 @@
 .brand.light small {
   color: var(--theme-on-dark-muted);
 }
+// Logo icon: the crescent moon + AC from the MoonFix logo, on its black tile
 .brand-mark {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  flex: none;
   width: 42px;
   height: 42px;
   border-radius: 13px;
-  background: var(--theme-gradient);
-  color: var(--theme-white);
+  overflow: hidden;
+  background: var(--theme-black);
   box-shadow: var(--theme-shadow-primary);
+}
+.brand-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.35); // fill the tile with the mark (the image has black padding)
+}
+// Full logo in the dark footer
+.footer-logo {
+  margin-bottom: 14px;
+}
+.footer-logo img {
+  display: block;
+  width: 240px;
+  max-width: 100%;
+  height: auto;
+}
+.footer-logo small {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  color: var(--theme-on-dark-muted);
 }
 .site-nav {
   display: flex;

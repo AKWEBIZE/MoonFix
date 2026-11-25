@@ -17,23 +17,28 @@
   top: 0;
   height: 100vh;
 }
+// MoonFix logo (black background blends into the black sidebar) + "Admin panel" label
 .admin-brand {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  font-family: var(--theme-font-display);
-  font-weight: 800;
-  color: var(--theme-white);
-  padding: 4px 10px 22px;
-  font-size: 1.05rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 0 6px 18px;
 }
-.admin-brand app-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 11px;
-  background: var(--theme-gradient);
-  align-items: center;
-  justify-content: center;
+.admin-brand img {
+  display: block;
+  width: 180px;
+  max-width: 100%;
+  height: auto;
+}
+.admin-brand span {
+  padding-left: 8px;
+  font-family: var(--theme-font-display);
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--theme-on-dark-muted, rgba(255, 255, 255, 0.6));
 }
 .admin-side nav {
   display: flex;
