@@ -14,7 +14,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { config, hashPassword, nowIso } from './util.js';
+import { config, hashPassword, nowIso, verifyPassword } from './util.js';
 
 export const dialect = config.db.host ? 'mysql' : 'sqlite';
 
@@ -513,7 +513,8 @@ for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) await insertIgnore(
 let settingsCache = {};
 async function loadSettings() {
   const rows = await db.prepare('SELECT `key`, value FROM settings').all();
-  settingsCache = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+  // Keys starting with "_" are internal (never sent to the admin panel)
+  settingsCache = Object.fromEntries(rows.filter((r) => !r.key.startsWith('_')).map((r) => [r.key, r.value]));
 }
 await loadSettings();
 
@@ -537,6 +538,29 @@ if (!(await db.prepare('SELECT 1 AS x FROM admins LIMIT 1').get())) {
   await db.prepare('INSERT INTO admins (username, password_hash, created_at) VALUES (?, ?, ?)')
     .run(config.adminUsername, hashPassword(config.adminPassword), nowIso());
   console.log(`[seed] Admin user "${config.adminUsername}" created`);
+}
+
+// Forgotten admin password: set ADMIN_RESET_PASSWORD=true (with ADMIN_USERNAME / ADMIN_PASSWORD) and restart.
+// The admin's password becomes ADMIN_PASSWORD (the account is created if that username does not exist).
+// It runs ONCE per password value: later restarts do nothing, so a password changed afterwards in
+// Admin > Settings is not overwritten even if the switch is left on. Remove the switch after use.
+if (String(process.env.ADMIN_RESET_PASSWORD || '').toLowerCase() === 'true') {
+  const done = (await db.prepare('SELECT value FROM settings WHERE `key` = ?').get('_admin_reset'))?.value;
+  const marker = `${config.adminUsername.toLowerCase()}|`;
+  const alreadyDone = done?.startsWith(marker) && verifyPassword(config.adminPassword, done.slice(marker.length));
+  if (alreadyDone) {
+    console.warn('[admin] ADMIN_RESET_PASSWORD is still set - already applied for this password, nothing changed. Remove it.');
+  } else {
+    const hash = hashPassword(config.adminPassword);
+    const admin = await db.prepare('SELECT id FROM admins WHERE lower(username) = ?').get(config.adminUsername.toLowerCase());
+    if (admin) await db.prepare('UPDATE admins SET password_hash = ? WHERE id = ?').run(hash, admin.id);
+    else {
+      await db.prepare('INSERT INTO admins (username, password_hash, created_at) VALUES (?, ?, ?)')
+        .run(config.adminUsername, hash, nowIso());
+    }
+    await upsert('settings', { key: '_admin_reset', value: marker + hashPassword(config.adminPassword) }, 'key', ['value']);
+    console.warn(`[admin] Password for "${config.adminUsername}" was reset from ADMIN_PASSWORD (${admin ? 'existing' : 'new'} account). Remove ADMIN_RESET_PASSWORD now.`);
+  }
 }
 
 if (!(await db.prepare('SELECT 1 AS x FROM services LIMIT 1').get())) {
