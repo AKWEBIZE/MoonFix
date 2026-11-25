@@ -1,21 +1,23 @@
 // =============================================================================
-//  THEME — Dodger Blue + Black
+//  THEME — MoonFix: logo blue + black
+//  Blues measured from the MoonFix logo: main #0b98ee ("FIX", moon), highlights #29afe4 / #00b0f0
+//  (snowflakes, glow), deep #0679c4 (air flow); dark areas use the logo's navy-black.
 //  Every colour in the app comes from these --theme-* variables.
 //  To re-brand, change the values here only.
 // =============================================================================
 :root {
-  // ---------- Primary: Dodger Blue ----------
-  --theme-primary: #1e90ff; // Dodger Blue
-  --theme-primary-rgb: 30, 144, 255; // use as rgba(var(--theme-primary-rgb), 0.3)
-  --theme-primary-dark: #0a6fd6;
-  --theme-primary-darker: #07539f;
-  --theme-primary-light: #5cb0ff;
-  --theme-primary-light-rgb: 92, 176, 255;
-  --theme-primary-300: #8cc6ff;
-  --theme-primary-200: #bfdfff;
-  --theme-primary-100: #dcedff;
-  --theme-primary-50: #eff7ff;
-  --theme-primary-soft: #e8f3ff; // light background for pills, active items
+  // ---------- Primary: MoonFix logo blue ----------
+  --theme-primary: #0b98ee; // logo blue
+  --theme-primary-rgb: 11, 152, 238; // use as rgba(var(--theme-primary-rgb), 0.3)
+  --theme-primary-dark: #0679c4;
+  --theme-primary-darker: #055a94;
+  --theme-primary-light: #2fb2f2; // logo highlight (snowflakes, glow)
+  --theme-primary-light-rgb: 47, 178, 242;
+  --theme-primary-300: #86cff7;
+  --theme-primary-200: #bde5fb;
+  --theme-primary-100: #dcf1fd;
+  --theme-primary-50: #eef8fe;
+  --theme-primary-soft: #e6f5fd; // light background for pills, active items
 
   // ---------- Black ----------
   --theme-black: #000000;
@@ -28,23 +30,23 @@
   // ---------- Gradients ----------
   --theme-gradient: linear-gradient(
     135deg,
-    #3aa0ff 0%,
-    #1e90ff 45%,
-    #0a6fd6 100%
+    #2fb2f2 0%,
+    #0b98ee 45%,
+    #0679c4 100%
   ); // buttons, highlights
-  --theme-gradient-accent: linear-gradient(135deg, #1e90ff 0%, #00bfff 100%); // main call-to-action
+  --theme-gradient-accent: linear-gradient(135deg, #0b98ee 0%, #00b8f0 100%); // main call-to-action
   --theme-gradient-dark: linear-gradient(
     135deg,
     #000000 0%,
-    #0b0b0b 55%,
-    #0a2a4a 100%
-  ); // hero, banners
+    #000710 55%,
+    #052a4b 100%
+  ); // hero, banners (the logo's navy-black)
   --theme-gradient-sidebar: linear-gradient(180deg, #000000 0%, #0d0d0d 100%); // admin sidebar
 
   // ---------- Accent (call-to-action) ----------
-  --theme-accent: #1e90ff;
-  --theme-accent-rgb: 30, 144, 255;
-  --theme-accent-soft: #e8f3ff;
+  --theme-accent: #0b98ee;
+  --theme-accent-rgb: 11, 152, 238;
+  --theme-accent-soft: #e6f5fd;
 
   // ---------- Text & surfaces (light areas) ----------
   --theme-text: #0a0a0a;
@@ -88,10 +90,10 @@
   --theme-whatsapp-dark: #128c4b;
 
   // ---------- Appliance categories ----------
-  --theme-cat-ac: #1e90ff;
-  --theme-cat-ac-bg: linear-gradient(135deg, #dcedff, #eff7ff);
-  --theme-cat-fridge: #0083c9;
-  --theme-cat-fridge-bg: linear-gradient(135deg, #d6f1ff, #eefaff);
+  --theme-cat-ac: #0b98ee;
+  --theme-cat-ac-bg: linear-gradient(135deg, #dcf1fd, #eef8fe);
+  --theme-cat-fridge: #0679c4;
+  --theme-cat-fridge-bg: linear-gradient(135deg, #d4ecfa, #edf7fd);
   --theme-cat-washer: #111111;
   --theme-cat-washer-bg: linear-gradient(135deg, #e2e5ea, #f5f6f8);
 
@@ -101,7 +103,7 @@
   --theme-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
   --theme-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.07);
   --theme-shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.16);
-  --theme-shadow-primary: 0 10px 30px rgba(30, 144, 255, 0.35);
+  --theme-shadow-primary: 0 10px 30px rgba(11, 152, 238, 0.35);
   --theme-font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --theme-font-display: 'Plus Jakarta Sans', var(--theme-font);
 }
