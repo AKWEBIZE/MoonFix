@@ -173,59 +173,63 @@
   <div class="two-col mt">
     <div class="card">
       <h3>By appliance</h3>
-      <table class="table mini">
-        <thead>
-          <tr>
-            <th>Appliance</th>
-            <th class="num">Orders</th>
-            <th class="num">Collections</th>
-            <th class="num">Share</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (c of r.byCategory; track c.category) {
+      <div class="table-scroll">
+        <table class="table mini">
+          <thead>
             <tr>
-              <td>{{ c.label }}</td>
-              <td class="num">{{ c.orders }}</td>
-              <td class="num">{{ rupees(c.collections) }}</td>
-              <td class="num">
-                <span class="share"
-                  ><i [style.width.%]="share(c.collections, totals().collections)"></i
-                ></span>
-                {{ share(c.collections, totals().collections) }}%
-              </td>
+              <th>Appliance</th>
+              <th class="num">Orders</th>
+              <th class="num">Collections</th>
+              <th class="num">Share</th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (c of r.byCategory; track c.category) {
+              <tr>
+                <td>{{ c.label }}</td>
+                <td class="num">{{ c.orders }}</td>
+                <td class="num">{{ rupees(c.collections) }}</td>
+                <td class="num">
+                  <span class="share"
+                    ><i [style.width.%]="share(c.collections, totals().collections)"></i
+                  ></span>
+                  {{ share(c.collections, totals().collections) }}%
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
     <div class="card">
       <h3>By payment method</h3>
-      <table class="table mini">
-        <thead>
-          <tr>
-            <th>Paid by</th>
-            <th class="num">Jobs</th>
-            <th class="num">Collections</th>
-            <th class="num">Share</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (m of r.byPaymentMode; track m.mode) {
+      <div class="table-scroll">
+        <table class="table mini">
+          <thead>
             <tr>
-              <td>{{ modeLabels[m.mode] }}</td>
-              <td class="num">{{ m.jobs }}</td>
-              <td class="num">{{ rupees(m.collections) }}</td>
-              <td class="num">
-                <span class="share"
-                  ><i [style.width.%]="share(m.collections, totals().collections)"></i
-                ></span>
-                {{ share(m.collections, totals().collections) }}%
-              </td>
+              <th>Paid by</th>
+              <th class="num">Jobs</th>
+              <th class="num">Collections</th>
+              <th class="num">Share</th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (m of r.byPaymentMode; track m.mode) {
+              <tr>
+                <td>{{ modeLabels[m.mode] }}</td>
+                <td class="num">{{ m.jobs }}</td>
+                <td class="num">{{ rupees(m.collections) }}</td>
+                <td class="num">
+                  <span class="share"
+                    ><i [style.width.%]="share(m.collections, totals().collections)"></i
+                  ></span>
+                  {{ share(m.collections, totals().collections) }}%
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 

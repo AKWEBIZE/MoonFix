@@ -6,9 +6,13 @@
   position: fixed;
   inset: 0;
   z-index: 1000;
-  display: grid;
-  place-items: center;
+  // flex + margin:auto (not place-items:center): when the content is taller than the screen it
+  // starts at the top and scrolls, instead of being cut off at the top
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 24px 16px;
   outline: none;
   color: var(--theme-on-dark);
@@ -38,6 +42,7 @@
 .cel-content {
   position: relative;
   z-index: 2;
+  margin: auto 0;
   width: min(520px, 100%);
   display: grid;
   justify-items: center;
@@ -501,5 +506,66 @@
   .cel-steps {
     margin: 12px 0 14px;
     gap: 6px;
+  }
+}
+
+// ---------- very short phones (around 640 px tall): tighter still, button stays on screen ----------
+@media (max-height: 680px) {
+  .cel {
+    padding: 14px 14px;
+  }
+  .cel-badge {
+    width: 84px;
+    height: 84px;
+  }
+  .cel-tick {
+    width: 74px;
+    height: 74px;
+  }
+  .cel-title {
+    font-size: 26px;
+  }
+  .cel-sub {
+    font-size: 0.88rem;
+    margin-bottom: 8px;
+  }
+  .ref-board {
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+  .flap {
+    width: 24px;
+    height: 32px;
+    font-size: 1rem;
+    border-radius: 5px;
+  }
+  .t-row {
+    font-size: 0.84rem;
+    padding: 4px 0;
+  }
+  .t-road {
+    height: 32px;
+  }
+  .van {
+    width: 46px;
+  }
+  .house {
+    width: 30px;
+  }
+  .stamp {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    bottom: 8px;
+  }
+  .cel-steps {
+    margin: 10px 0 12px;
+    gap: 4px;
+  }
+  .cel-steps li {
+    font-size: 0.85rem;
+  }
+  .cel-btn {
+    padding-top: 10px;
+    padding-bottom: 10px;
   }
 }

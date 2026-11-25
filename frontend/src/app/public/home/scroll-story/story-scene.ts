@@ -47,6 +47,7 @@ export function createStoryScene(canvas: HTMLCanvasElement): StoryScene {
 
   // layout depends on screen shape (portrait phones: appliance on top, cards below)
   let portrait = false;
+  let shortPortrait = false; // phones under ~720 px tall: smaller appliance, placed higher (cards below)
   const colorA = new THREE.Color();
   const colorB = new THREE.Color();
 
@@ -54,6 +55,7 @@ export function createStoryScene(canvas: HTMLCanvasElement): StoryScene {
     renderer.setSize(width, height, false);
     camera.aspect = width / Math.max(1, height);
     portrait = camera.aspect < 0.9;
+    shortPortrait = portrait && height < 720;
     // keep the widest appliance (AC, ~3.4 units) comfortably on screen
     const visibleWidthPerUnitZ = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect;
     camera.position.z = Math.max(10, (portrait ? 4.4 : 7.2) / visibleWidthPerUnitZ);
@@ -72,7 +74,7 @@ export function createStoryScene(canvas: HTMLCanvasElement): StoryScene {
     const side = aside(q) * (i === CHAPTERS - 1 ? 1 - outroAt(p) : 1);
     const out = i === CHAPTERS - 1 ? outroAt(p) : 0;
     const asideX = portrait ? 0 : -1.75;
-    const asideY = portrait ? 1.05 : 0;
+    const asideY = portrait ? (shortPortrait ? 1.3 : 1.05) : 0;
     const restY = i === 0 ? 0.25 : 0.05;
 
     group.position.x = lerp(0, asideX, side) + out * (portrait ? 0 : 2.1);
@@ -81,7 +83,7 @@ export function createStoryScene(canvas: HTMLCanvasElement): StoryScene {
     const turn = lerp(-0.55, 0.5, seg(q, 0, 1));
     group.rotation.y = turn + (1 - enter) * Math.PI * 1.2 + leave * Math.PI;
     group.rotation.x = 0.1 + (1 - enter) * 0.5 - leave * 0.4;
-    const s = (portrait ? 0.82 : 1) * lerp(0.55, 1, enter) * lerp(1, 0.4, leave) * lerp(1, 0.85, out);
+    const s = (portrait ? (shortPortrait ? 0.66 : 0.82) : 1) * lerp(0.55, 1, enter) * lerp(1, 0.4, leave) * lerp(1, 0.85, out);
     group.scale.setScalar(s);
   }
 

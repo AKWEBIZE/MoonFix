@@ -389,3 +389,73 @@ canvas {
 .static-ch a {
   color: var(--theme-on-dark);
 }
+
+// ---------- short phones (portrait, under ~720 px tall): 2 services per chapter, compact cards ----------
+@media (max-aspect-ratio: 9/10) and (max-height: 719px) {
+  .cards {
+    bottom: 70px;
+    gap: 6px;
+  }
+  .cards .card.svc:nth-child(n + 4) {
+    display: none;
+  }
+  .card {
+    padding: 9px 12px;
+  }
+  .card.head small {
+    font-size: 0.66rem;
+  }
+  .card.head h3 {
+    margin: 2px 0 0;
+    font-size: 1.02rem;
+  }
+  .svc-name {
+    font-size: 0.9rem;
+  }
+  .svc-meta b {
+    font-size: 1rem;
+  }
+  .svc-meta small {
+    font-size: 0.72rem;
+  }
+  .w {
+    font-size: clamp(48px, 19vw, 120px);
+  }
+  .w-right {
+    bottom: 26vh;
+  }
+  .outro h2 {
+    font-size: 32px;
+  }
+}
+
+// ---------- short landscape screens (phones held sideways): compact cards that fit the height ----------
+@media (min-aspect-ratio: 9/10) and (max-height: 520px) {
+  .cards {
+    gap: 6px;
+    width: min(330px, 40vw);
+  }
+  .cards .card.svc:nth-child(n + 4),
+  .card.head p {
+    display: none;
+  }
+  .card {
+    padding: 8px 12px;
+  }
+  .card.head h3 {
+    margin: 2px 0 0;
+    font-size: 1.05rem;
+  }
+  .w {
+    font-size: clamp(48px, 10vw, 120px);
+  }
+  .outro {
+    margin-top: -90px;
+  }
+  .outro h2 {
+    font-size: 32px;
+  }
+  .outro p {
+    display: none;
+  }
+}

@@ -21,7 +21,7 @@
 
 .form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr)); // minmax(0, ...) lets columns shrink on small phones
   gap: 16px 18px;
 }
 .form-grid .full {
@@ -90,6 +90,7 @@
 }
 .actions-split {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 10px;
   margin-top: 26px;
@@ -246,7 +247,7 @@
 
 @include bp.down(bp.$mobile) {
   .form-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .summary > div {
     grid-template-columns: 1fr;
@@ -257,5 +258,19 @@
   }
   .card.elevated {
     padding: 20px;
+  }
+}
+
+// Inputs never force their box wider than the screen
+.field input,
+.field select,
+.field textarea {
+  min-width: 0;
+  max-width: 100%;
+}
+// Very small phones: the primary button takes the remaining width in a button row
+@media (max-width: 360px) {
+  .actions-split > .btn-primary {
+    flex: 1 1 auto;
   }
 }

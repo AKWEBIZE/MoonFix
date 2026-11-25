@@ -688,6 +688,11 @@
   position: relative;
 }
 .why-panel .big {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 8px;
+  row-gap: 6px;
   font-family: var(--theme-font-display);
   font-size: 3.4rem;
   font-weight: 800;
@@ -697,8 +702,8 @@
 .why-panel .big small {
   font-size: 1rem;
   font-weight: 600;
+  line-height: 1.3;
   color: var(--theme-primary-200);
-  margin-left: 6px;
 }
 .guarantee {
   display: flex;

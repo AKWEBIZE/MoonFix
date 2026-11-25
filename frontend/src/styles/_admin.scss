@@ -3,6 +3,7 @@
 // Building blocks shared by the admin pages.
 .page-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -101,7 +102,7 @@
 
 .two-col {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
   align-items: start;
 }
@@ -163,6 +164,12 @@
 
 @include bp.down(bp.$tablet) {
   .two-col {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
+}
+
+// Wide tables scroll sideways inside their card on phones (instead of widening the page)
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }

@@ -1,4 +1,4 @@
-import { Component, computed, input, signal } from '@angular/core';
+import { afterNextRender, Component, computed, DestroyRef, ElementRef, inject, input, signal } from '@angular/core';
 
 export interface ChartBar {
   /** Short label for the x-axis */
@@ -46,6 +46,19 @@ export class BarChart {
   ariaLabel = input('Bar chart');
 
   hover = signal<number | null>(null);
+  /** chart width in px (x-axis labels are thinned out to fit) */
+  private width = signal(640);
+
+  constructor() {
+    const host = inject(ElementRef<HTMLElement>);
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      this.width.set(host.nativeElement.clientWidth || 640); // right away, then on every resize
+      const ro = new ResizeObserver(([e]) => this.width.set(e.contentRect.width || 640));
+      ro.observe(host.nativeElement);
+      destroyRef.onDestroy(() => ro.disconnect());
+    });
+  }
 
   max = computed(() => {
     const top = Math.max(0, ...this.bars().map((b) => b.value));
@@ -61,8 +74,14 @@ export class BarChart {
     });
     return best;
   });
-  /** Show every Nth x-axis label so they never collide */
-  labelStep = computed(() => Math.ceil(this.bars().length / 8));
+  /** Show every Nth x-axis label so they never collide (fewer on narrow phone screens) */
+  labelStep = computed(() => {
+    // room per label from its length (~7 px per character + spacing), e.g. "Mar 2026" needs ~70 px
+    const longest = Math.max(0, ...this.bars().map((b) => b.label.length));
+    const per = Math.max(46, longest * 7 + 14);
+    const fit = Math.max(2, Math.min(8, Math.floor(this.width() / per)));
+    return Math.ceil(this.bars().length / fit);
+  });
   ticks = computed(() => [1, 0.5, 0].map((f) => this.max() * f));
 
   /** Every Nth label, plus the last one; drop a label that would sit right next to the last */

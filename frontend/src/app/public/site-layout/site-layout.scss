@@ -55,6 +55,7 @@
 }
 .brand {
   white-space: nowrap;
+  min-width: 0; // lets a long business name shrink (with "...") instead of pushing the menu button off-screen
   display: flex;
   align-items: center;
   gap: 10px;
@@ -355,5 +356,28 @@
   }
   .wa-float .wa-tip {
     display: none;
+  }
+}
+
+// ---------- Small phones: brand text truncates instead of overflowing ----------
+.brand > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.brand small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.menu-btn {
+  flex: none;
+}
+@media (max-width: 360px) {
+  .brand {
+    font-size: 1.02rem;
+    gap: 8px;
+  }
+  .brand small {
+    font-size: 0.66rem;
   }
 }
