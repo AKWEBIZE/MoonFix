@@ -30,20 +30,30 @@ function sendStatus(res, data) {
   res.end(JSON.stringify(data, null, 2));
 }
 
-// Until app.js is ready, answer with "starting"
-let handler = (_req, res) => {
-  res.setHeader('retry-after', '5');
-  sendStatus(res, {
-    message: 'The server is starting. Please try again in a few seconds.',
-    code: 'STARTING',
-    secondsSinceStart: Math.round((Date.now() - startedAt) / 1000),
+const WAIT_MS = 25_000; // how long a request may wait for the app to finish loading
+
+// While app.js loads, requests wait for it (the host may start new copies of the app at any time,
+// and a visitor should not get an error just because they hit a copy that is a second old).
+// Only if loading takes longer than WAIT_MS do they get "starting".
+let handler = (req, res) => {
+  const timer = setTimeout(() => {
+    res.setHeader('retry-after', '5');
+    sendStatus(res, {
+      message: 'The server is starting. Please try again in a few seconds.',
+      code: 'STARTING',
+      secondsSinceStart: Math.round((Date.now() - startedAt) / 1000),
+    });
+  }, WAIT_MS);
+  loading.then(() => {
+    clearTimeout(timer);
+    if (!res.headersSent && !res.writableEnded) handler(req, res); // handler is now the app or the error page
   });
 };
 
 const server = http.createServer((req, res) => handler(req, res));
 server.listen(process.env.PORT || 4000, () => console.log(`[api] Listening on port ${process.env.PORT || 4000}, loading the app...`));
 
-import('./app.js').then(
+const loading = import('./app.js').then(
   ({ default: app, onReady }) => {
     handler = app;
     onReady();
